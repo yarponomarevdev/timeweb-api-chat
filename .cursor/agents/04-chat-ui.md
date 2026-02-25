@@ -1,6 +1,6 @@
 ---
 name: tw-chat-ui
-model: gemini-3.1-pro
+model: claude-4.6-sonnet-medium-thinking
 description: Реализует ChatGPT-like интерфейс и компоненты отображения tool-результатов.
 ---
 

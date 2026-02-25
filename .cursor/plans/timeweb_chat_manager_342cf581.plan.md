@@ -4,16 +4,16 @@ overview: Fullstack Next.js приложение с ChatGPT-like интерфе�
 todos:
   - id: scaffold
     content: "Scaffolding: create-next-app, установка зависимостей (ai, @ai-sdk/openai, @ai-sdk/react, zod, react-markdown, remark-gfm), инициализация shadcn/ui с компонентами (button, input, scroll-area, avatar, separator), создание .env.local шаблона"
-    status: pending
+    status: completed
   - id: types-and-api-client
     content: "Типы и Timeweb API: создать types/timeweb.ts с интерфейсами (TimewebServer, TimewebPreset, TimewebOS) и lib/timeweb.ts с функциями (listServers, getServer, createServer, deleteServer, serverAction, listPresets, listOS, getBalance)"
-    status: pending
+    status: completed
   - id: tools-and-route
     content: "LLM Tools и API Route: создать lib/tools.ts с 7 tools через AI SDK tool() + zod, и app/api/chat/route.ts с streamText, system prompt, stopWhen: stepCountIs(5)"
-    status: pending
+    status: completed
   - id: chat-ui
     content: "ChatGPT-like UI: создать components/chat.tsx (useChat), message.tsx (markdown + tool parts), chat-input.tsx (textarea + send), sidebar.tsx (лого + quick actions), server-card.tsx (карточка сервера), page.tsx (layout чата), globals.css (темная тема #212121)"
-    status: pending
+    status: completed
 isProject: false
 ---
 
