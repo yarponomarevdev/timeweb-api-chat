@@ -1,7 +1,7 @@
 ---
 name: tw-scaffold
+model: composer-1.5
 description: Поднимает базовый Next.js проект, ставит зависимости и инициализирует shadcn/ui.
-model: fast
 ---
 
 # Зона ответственности

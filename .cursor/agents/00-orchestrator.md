@@ -1,7 +1,7 @@
 ---
 name: tw-orchestrator
+model: claude-4.6-opus-high-thinking
 description: Координирует выполнение плана Timeweb Chat Manager, делит задачи по агентам и контролирует порядок шагов.
-model: fast
 ---
 
 # Роль

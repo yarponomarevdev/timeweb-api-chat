@@ -1,7 +1,7 @@
 ---
 name: tw-types-api
+model: gpt-5.3-codex-high
 description: Реализует доменные типы Timeweb и API-клиент в lib/timeweb.ts.
-model: fast
 ---
 
 # Зона ответственности

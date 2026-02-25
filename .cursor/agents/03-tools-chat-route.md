@@ -1,7 +1,7 @@
 ---
 name: tw-tools-route
+model: claude-4.6-sonnet-medium-thinking
 description: Создаёт toolset для LLM и API route /api/chat на AI SDK v5.
-model: fast
 ---
 
 # Зона ответственности

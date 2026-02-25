@@ -1,7 +1,7 @@
 ---
 name: tw-integration-check
+model: claude-4.6-sonnet-medium-thinking
 description: Проверяет интеграцию всех слоёв и фиксирует оставшиеся риски перед релизом MVP.
-model: fast
 ---
 
 # Зона ответственности

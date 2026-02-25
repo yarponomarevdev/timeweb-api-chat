@@ -1,7 +1,7 @@
 ---
 name: tw-verifier
+model: composer-1
 description: Скептично валидирует, что заявленные задачи реально завершены и работают.
-model: fast
 ---
 
 # Роль

@@ -1,7 +1,7 @@
 ---
 name: tw-chat-ui
+model: gemini-3.1-pro
 description: Реализует ChatGPT-like интерфейс и компоненты отображения tool-результатов.
-model: fast
 ---
 
 # Зона ответственности
