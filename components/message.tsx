@@ -5,14 +5,17 @@ import type { UIMessage } from "ai";
 import { isTextUIPart, isToolUIPart, getToolName } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Bot, User } from "lucide-react";
+import { Bot, User, RotateCcw } from "lucide-react";
 import { ServerCard } from "./server-card";
+import { ServerCreateForm } from "./server-create-form";
 
 interface MessageProps {
   message: UIMessage;
+  onRetry?: () => void;
+  onSendMessage?: (text: string) => void;
 }
 
-export function Message({ message }: MessageProps) {
+export function Message({ message, onRetry, onSendMessage }: MessageProps) {
   const isUser = message.role === "user";
 
   return (
@@ -31,8 +34,22 @@ export function Message({ message }: MessageProps) {
         </div>
 
         <div className={`flex flex-col gap-2 min-w-0 ${isUser ? "items-end" : "items-start"}`}>
+          {isUser && onRetry && (
+            <button
+              onClick={onRetry}
+              className="flex items-center gap-1.5 text-xs text-[#8e8ea0] hover:text-[#ececec] transition-colors px-2 py-1 rounded-lg hover:bg-[#2f2f2f] order-last mt-1"
+              title="Повторить запрос"
+            >
+              <RotateCcw size={12} />
+              Повторить
+            </button>
+          )}
           {message.parts?.map((part, index) => {
             if (isTextUIPart(part)) {
+              // Скрываем системное сообщение подтверждения создания сервера
+              if (isUser && part.text.startsWith("Подтверждаю. Создай сервер:")) {
+                return null;
+              }
               return (
                 <div
                   key={index}
@@ -76,6 +93,13 @@ export function Message({ message }: MessageProps) {
                 }
 
                 if (toolName === "create_server") {
+                  if (output.error) {
+                    return (
+                      <div key={index} className="bg-red-900/30 rounded-xl p-3 border border-red-700 text-red-300 text-sm my-2">
+                        {output.message}
+                      </div>
+                    );
+                  }
                   return <ServerCard key={index} server={output} />;
                 }
 
@@ -110,7 +134,74 @@ export function Message({ message }: MessageProps) {
                   );
                 }
 
-                // Fallback — остальные tools (list_presets, list_os)
+                if (toolName === "propose_server") {
+                  return (
+                    <ServerCreateForm
+                      key={index}
+                      data={output}
+                      onConfirm={onSendMessage ?? (() => {})}
+                    />
+                  );
+                }
+
+                if (toolName === "list_presets") {
+                  const presets = Array.isArray(output) ? output : [];
+                  return (
+                    <div key={index} className="w-full my-2 overflow-x-auto rounded-xl border border-[#3a3a3a]">
+                      <table className="w-full text-sm text-[#ececec]">
+                        <thead>
+                          <tr className="bg-[#171717] text-[#8e8ea0] text-xs uppercase tracking-wide">
+                            <th className="text-left px-4 py-3 font-medium">Тариф</th>
+                            <th className="text-center px-3 py-3 font-medium">CPU</th>
+                            <th className="text-center px-3 py-3 font-medium">RAM</th>
+                            <th className="text-center px-3 py-3 font-medium">Диск</th>
+                            <th className="text-right px-4 py-3 font-medium">₽/мес</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {presets.map((p: any, i: number) => (
+                            <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
+                              <td className="px-4 py-2.5 font-medium">{p.description}</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{p.cpu}</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{p.ram_gb} GB</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{p.disk_gb >= 1000 ? `${Math.round(p.disk_gb / 1024)} TB` : `${p.disk_gb} GB`}</td>
+                              <td className="px-4 py-2.5 text-right font-semibold text-[#10a37f]">{p.price_per_month}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+
+                if (toolName === "list_os") {
+                  const osList = Array.isArray(output) ? output : [];
+                  return (
+                    <div key={index} className="flex flex-col gap-2 my-2">
+                      <div className="text-xs text-[#8e8ea0]">Выберите операционную систему:</div>
+                      <div className="flex flex-wrap gap-2">
+                        {osList.map((os: any, i: number) => {
+                          const label = os.full_name || `${os.name} ${os.version}`;
+                          return onSendMessage ? (
+                            <button
+                              key={i}
+                              onClick={() => onSendMessage(`Используй ${label}`)}
+                              className="bg-[#2f2f2f] hover:bg-[#10a37f] hover:border-[#10a37f] border border-[#3a3a3a] rounded-lg px-3 py-1.5 text-sm text-[#ececec] transition-colors cursor-pointer"
+                            >
+                              {label}
+                            </button>
+                          ) : (
+                            <span key={i} className="bg-[#2f2f2f] border border-[#3a3a3a] rounded-lg px-3 py-1.5 text-sm text-[#ececec]">
+                              {label}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                }
+
+                // Fallback для неизвестных tools
                 return (
                   <div key={index} className="bg-[#171717] rounded-xl p-4 border border-[#3a3a3a] my-2 w-full overflow-x-auto">
                     <div className="text-xs text-[#8e8ea0] mb-2 font-mono uppercase tracking-wide">

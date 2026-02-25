@@ -2,7 +2,7 @@
 
 import React, { useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport } from "ai";
+import { DefaultChatTransport, isTextUIPart } from "ai";
 import { Server } from "lucide-react";
 import { Sidebar } from "./sidebar";
 import { ChatInput } from "./chat-input";
@@ -45,6 +45,12 @@ export function Chat() {
     setMessages([]);
   };
 
+  const handleRetry = (messageIndex: number, messageText: string) => {
+    // Оставляем историю до этого сообщения (не включая его) и шлём его заново
+    setMessages((prev) => prev.slice(0, messageIndex));
+    sendMessage({ text: messageText });
+  };
+
   return (
     <div className="flex h-screen w-full bg-[#212121] overflow-hidden">
       <Sidebar onNewChat={handleNewChat} onQuickAction={handleQuickAction} />
@@ -78,9 +84,21 @@ export function Chat() {
             </div>
           ) : (
             <div className="max-w-3xl mx-auto flex flex-col pb-24">
-              {messages.map((m) => (
-                <Message key={m.id} message={m} />
-              ))}
+              {messages.map((m, i) => {
+                const userText = m.parts?.find((p) => isTextUIPart(p))?.text ?? "";
+                return (
+                  <Message
+                    key={m.id}
+                    message={m}
+                    onRetry={
+                      m.role === "user" && !isLoading
+                        ? () => handleRetry(i, userText)
+                        : undefined
+                    }
+                    onSendMessage={!isLoading ? handleQuickAction : undefined}
+                  />
+                );
+              })}
               {isLoading && messages[messages.length - 1]?.role === "user" && (
                 <div className="flex items-center gap-2 text-[#8e8ea0] text-sm">
                   <div className="w-2 h-2 bg-[#8e8ea0] rounded-full animate-bounce" />

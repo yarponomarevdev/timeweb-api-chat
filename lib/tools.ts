@@ -62,21 +62,30 @@ export const tools = {
       preset_id: z
         .number()
         .describe("ID тарифа из list_presets"),
-      bandwidth: z
-        .number()
-        .optional()
-        .default(200)
-        .describe("Пропускная способность в Мбит/с (100-1000, шаг 100)"),
       comment: z.string().optional().describe("Комментарий к серверу"),
     }),
-    execute: async ({ name, os_id, preset_id, bandwidth, comment }) => {
+    execute: async ({ name, os_id, preset_id, comment }) => {
+      // Берём bandwidth из самого пресета, чтобы не получить 400 ошибку
+      const presets = await tw.listPresets();
+      const preset = presets.find((p) => p.id === preset_id);
+      const bandwidth = preset?.bandwidth ?? 1000;
+
       const server = await tw.createServer({
         name,
         os_id,
         preset_id,
-        bandwidth: bandwidth ?? 200,
+        bandwidth,
         comment,
       });
+
+      // Проверяем статус — если no_paid, значит недостаточно средств
+      if (server.status === "no_paid") {
+        return {
+          error: true,
+          message: "Недостаточно средств на балансе для создания сервера. Пополните баланс в панели управления Timeweb Cloud.",
+        };
+      }
+
       return {
         id: server.id,
         name: server.name,
@@ -86,7 +95,7 @@ export const tools = {
         os: server.os?.name ?? "—",
         ram_mb: server.ram,
         created_at: server.created_at,
-        message: "Сервер создаётся, обычно занимает 1-3 минуты",
+        message: "Сервер создаётся, обычно занимает 1–3 минуты",
       };
     },
   }),
@@ -136,14 +145,76 @@ export const tools = {
     },
   }),
 
+  propose_server: tool({
+    description:
+      "Подготовить предложение конфигурации нового сервера. Используй ТОЛЬКО этот tool при создании сервера — он сам подберёт тариф и ОС без показа таблицы тарифов.",
+    inputSchema: z.object({
+      name: z.string().describe("Имя будущего сервера"),
+      os_query: z
+        .string()
+        .describe("Название ОС, например 'ubuntu', 'debian', 'centos'"),
+      ram_mb: z
+        .number()
+        .optional()
+        .describe("Желаемый размер RAM в МБ (например 2048 для 2 GB)"),
+    }),
+    execute: async ({ name, os_query, ram_mb }) => {
+      const [presets, osList] = await Promise.all([
+        tw.listPresets(),
+        tw.listOS(),
+      ]);
+
+      // Подбираем тариф — самый дешёвый с нужным RAM
+      const targetRam = ram_mb ?? 2048;
+      const matching = presets.filter((p) => p.ram === targetRam);
+      const preset = (matching.length > 0 ? matching : presets)
+        .sort((a, b) => a.price - b.price)[0];
+
+      // Фильтруем ОС по запросу
+      const matchingOs = osList.filter((os) =>
+        os.name.toLowerCase().includes(os_query.toLowerCase())
+      );
+      // Выбираем предпоследнюю стабильную (не последнюю, т.к. может быть нестабильной)
+      const defaultOs =
+        matchingOs[matchingOs.length > 1 ? matchingOs.length - 2 : 0] ??
+        matchingOs[0];
+
+      return {
+        server_name: name,
+        preset: {
+          id: preset.id,
+          description: preset.description_short || preset.description,
+          cpu: preset.cpu,
+          ram_mb: preset.ram,
+          ram_gb: Math.round(preset.ram / 1024),
+          disk_gb: preset.disk,
+          price_per_month: preset.price,
+          bandwidth: preset.bandwidth,
+        },
+        selected_os: {
+          id: defaultOs.id,
+          name: defaultOs.name,
+          version: defaultOs.version,
+          full_name: `${defaultOs.name} ${defaultOs.version}`,
+        },
+        available_os: matchingOs.map((os) => ({
+          id: os.id,
+          name: os.name,
+          version: os.version,
+          full_name: `${os.name} ${os.version}`,
+        })),
+      };
+    },
+  }),
+
   list_presets: tool({
     description:
-      "Получить список доступных тарифов для облачных серверов с характеристиками и ценами",
+      "Показать список доступных тарифов. Используй ТОЛЬКО когда пользователь явно просит показать тарифы — НЕ при создании сервера.",
     inputSchema: z.object({
       ram_mb: z
         .number()
         .optional()
-        .describe("Фильтр по оперативной памяти в МБ (например 2048 для 2GB)"),
+        .describe("Фильтр по оперативной памяти в МБ"),
     }),
     execute: async ({ ram_mb }) => {
       const presets = await tw.listPresets();
@@ -165,12 +236,9 @@ export const tools = {
 
   list_os: tool({
     description:
-      "Получить список доступных операционных систем для установки на сервер",
+      "Показать список ОС. Используй ТОЛЬКО когда пользователь явно просит список ОС — НЕ при создании сервера (для этого есть propose_server).",
     inputSchema: z.object({
-      search: z
-        .string()
-        .optional()
-        .describe("Поиск по названию ОС, например 'ubuntu' или 'debian'"),
+      search: z.string().optional().describe("Поиск по названию ОС"),
     }),
     execute: async ({ search }) => {
       const osList = await tw.listOS();

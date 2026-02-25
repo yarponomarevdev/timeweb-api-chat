@@ -39,7 +39,7 @@ async function apiRequest<T>(
 
 export async function listServers(): Promise<TimewebServer[]> {
   const data = await apiRequest<{ servers: TimewebServer[] }>("/servers");
-  return data.servers;
+  return data.servers ?? [];
 }
 
 export async function getServer(id: number): Promise<TimewebServer> {
@@ -72,15 +72,15 @@ export async function serverAction(
 }
 
 export async function listPresets(): Promise<TimewebPreset[]> {
-  const data = await apiRequest<{ servers_presets: TimewebPreset[] }>(
+  const data = await apiRequest<{ server_presets: TimewebPreset[] }>(
     "/presets/servers"
   );
-  return data.servers_presets;
+  return data.server_presets ?? [];
 }
 
 export async function listOS(): Promise<TimewebOS[]> {
   const data = await apiRequest<{ servers_os: TimewebOS[] }>("/os/servers");
-  return data.servers_os;
+  return data.servers_os ?? [];
 }
 
 export async function getBalance(): Promise<TimewebFinances> {
