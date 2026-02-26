@@ -56,7 +56,8 @@ export interface TimewebServer {
     | "backup_creating"
     | "backup_restoring"
     | "cloning"
-    | "migrating";
+    | "migrating"
+    | "no_paid";
   os: TimewebOS;
   preset_id: number | null;
   cpu: number;

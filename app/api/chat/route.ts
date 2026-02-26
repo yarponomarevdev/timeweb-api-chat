@@ -6,6 +6,7 @@ import {
   type UIMessage,
 } from "ai";
 import { tools } from "@/lib/tools";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
 
@@ -46,13 +47,21 @@ const SYSTEM_PROMPT = `Ты — умный ассистент для управ�
 
 
 export async function POST(req: Request) {
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  if (!checkRateLimit(ip)) {
+    return new Response("Too Many Requests", { status: 429 });
+  }
+
   const { messages }: { messages: UIMessage[] } = await req.json();
 
+  const model = process.env.OPENAI_MODEL ?? "gpt-4o";
+  const maxSteps = Number(process.env.CHAT_MAX_STEPS ?? 8);
+
   const result = streamText({
-    model: openai("gpt-4o"),
+    model: openai(model),
     system: SYSTEM_PROMPT,
     messages: await convertToModelMessages(messages),
-    stopWhen: stepCountIs(8),
+    stopWhen: stepCountIs(maxSteps),
     tools,
   });
 

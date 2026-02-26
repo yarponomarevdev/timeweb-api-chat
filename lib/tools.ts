@@ -1,6 +1,86 @@
 import { tool } from "ai";
 import { z } from "zod";
 import * as tw from "./timeweb";
+import type { TimewebServer } from "@/types/timeweb";
+
+export interface ServerSummary {
+  id: number;
+  name: string;
+  status: string;
+  status_label: string;
+  ip: string;
+  os: string;
+  os_version: string;
+  cpu: number;
+  ram_mb: number;
+  disk_gb: number;
+  comment: string;
+  created_at: string;
+  location: string;
+}
+
+export interface ServerSummaryWithNetworks extends ServerSummary {
+  networks: TimewebServer["networks"];
+}
+
+export interface CreateServerSuccess extends ServerSummary {
+  message: string;
+}
+
+export interface CreateServerError {
+  error: true;
+  message: string;
+}
+
+export type CreateServerOutput = CreateServerSuccess | CreateServerError;
+
+export interface DeleteServerOutput {
+  success: true;
+  message: string;
+}
+
+export interface ServerActionOutput {
+  success: boolean;
+  action: string;
+  action_label: string;
+  server_id: number;
+  message: string;
+}
+
+export interface OsOption {
+  id: number;
+  name: string;
+  version: string;
+  full_name: string;
+}
+
+export interface PresetSummary {
+  id: number;
+  description: string;
+  cpu: number;
+  ram_mb: number;
+  ram_gb: number;
+  disk_gb: number;
+  price_per_month: number;
+  bandwidth: number;
+}
+
+export interface ProposeServerOutput {
+  server_name: string;
+  preset: PresetSummary;
+  selected_os: OsOption;
+  available_os: OsOption[];
+}
+
+export interface BalanceOutput {
+  balance: number;
+  currency: string;
+  total: number;
+  promocode_balance: number;
+  hours_left: number | null;
+  is_blocked: boolean;
+  penalty: number;
+}
 
 export const tools = {
   list_servers: tool({
@@ -174,10 +254,14 @@ export const tools = {
       const matchingOs = osList.filter((os) =>
         os.name.toLowerCase().includes(os_query.toLowerCase())
       );
-      // Выбираем предпоследнюю стабильную (не последнюю, т.к. может быть нестабильной)
-      const defaultOs =
-        matchingOs[matchingOs.length > 1 ? matchingOs.length - 2 : 0] ??
-        matchingOs[0];
+      // Берём последнюю стабильную версию (без alpha/beta/rc)
+      const stableOs = matchingOs.filter(
+        (os) => !/alpha|beta|rc/i.test(os.version)
+      );
+      const pool = stableOs.length > 0 ? stableOs : matchingOs;
+      const defaultOs = pool.sort((a, b) =>
+        b.version.localeCompare(a.version, undefined, { numeric: true })
+      )[0];
 
       return {
         server_name: name,

@@ -2,32 +2,10 @@
 
 import { useState } from "react";
 import { Server, Cpu, HardDrive, Zap } from "lucide-react";
-
-interface OsOption {
-  id: number;
-  name: string;
-  version: string;
-  full_name: string;
-}
-
-interface PresetInfo {
-  id: number;
-  description: string;
-  cpu: number;
-  ram_mb: number;
-  ram_gb: number;
-  disk_gb: number;
-  price_per_month: number;
-  bandwidth: number;
-}
+import type { ProposeServerOutput, OsOption } from "@/lib/tools";
 
 interface ServerCreateFormProps {
-  data: {
-    server_name: string;
-    preset: PresetInfo;
-    selected_os: OsOption;
-    available_os: OsOption[];
-  };
+  data: ProposeServerOutput;
   onConfirm: (text: string) => void;
 }
 

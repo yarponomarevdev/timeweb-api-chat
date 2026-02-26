@@ -8,12 +8,25 @@ import remarkGfm from "remark-gfm";
 import { Bot, User, RotateCcw } from "lucide-react";
 import { ServerCard } from "./server-card";
 import { ServerCreateForm } from "./server-create-form";
+import type {
+  ServerSummary,
+  ServerSummaryWithNetworks,
+  CreateServerOutput,
+  DeleteServerOutput,
+  ServerActionOutput,
+  ProposeServerOutput,
+  PresetSummary,
+  OsOption,
+  BalanceOutput,
+} from "@/lib/tools";
 
 interface MessageProps {
   message: UIMessage;
   onRetry?: () => void;
   onSendMessage?: (text: string) => void;
 }
+
+type PresetRow = PresetSummary & { description: string };
 
 export function Message({ message, onRetry, onSendMessage }: MessageProps) {
   const isUser = message.role === "user";
@@ -46,7 +59,6 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
           )}
           {message.parts?.map((part, index) => {
             if (isTextUIPart(part)) {
-              // Скрываем системное сообщение подтверждения создания сервера
               if (isUser && part.text.startsWith("Подтверждаю. Создай сервер:")) {
                 return null;
               }
@@ -67,7 +79,6 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
             if (isToolUIPart(part)) {
               const toolName = getToolName(part);
 
-              // Показываем спиннер пока tool выполняется
               if (part.state === "input-available" || part.state === "input-streaming") {
                 return (
                   <div key={index} className="flex items-center gap-2 text-sm text-[#8e8ea0] my-2">
@@ -77,33 +88,41 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                 );
               }
 
-              // Показываем результат tool
               if (part.state === "output-available") {
-                const output = part.output as any;
-
-                if (toolName === "list_servers" || toolName === "get_server") {
-                  const servers = Array.isArray(output) ? output : [output];
+                if (toolName === "list_servers") {
+                  const output = part.output as ServerSummary[];
                   return (
                     <div key={index} className="flex flex-col gap-2 w-full">
-                      {servers.map((s: any, i: number) => (
-                        <ServerCard key={i} server={s} />
+                      {output.map((s, i) => (
+                        <ServerCard key={i} server={s} onAction={onSendMessage} />
                       ))}
                     </div>
                   );
                 }
 
+                if (toolName === "get_server") {
+                  const output = part.output as ServerSummaryWithNetworks;
+                  return (
+                    <div key={index} className="flex flex-col gap-2 w-full">
+                      <ServerCard server={output} onAction={onSendMessage} />
+                    </div>
+                  );
+                }
+
                 if (toolName === "create_server") {
-                  if (output.error) {
+                  const output = part.output as CreateServerOutput;
+                  if ("error" in output && output.error) {
                     return (
                       <div key={index} className="bg-red-900/30 rounded-xl p-3 border border-red-700 text-red-300 text-sm my-2">
                         {output.message}
                       </div>
                     );
                   }
-                  return <ServerCard key={index} server={output} />;
+                  return <ServerCard key={index} server={output as ServerSummary} onAction={onSendMessage} />;
                 }
 
                 if (toolName === "get_balance") {
+                  const output = part.output as BalanceOutput;
                   return (
                     <div key={index} className="bg-[#2f2f2f] rounded-xl p-4 border border-[#3a3a3a] my-2 max-w-xs">
                       <div className="text-[#8e8ea0] text-sm mb-1">Текущий баланс</div>
@@ -120,6 +139,7 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                 }
 
                 if (toolName === "delete_server" || toolName === "server_action") {
+                  const output = part.output as DeleteServerOutput | ServerActionOutput;
                   return (
                     <div
                       key={index}
@@ -135,6 +155,7 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                 }
 
                 if (toolName === "propose_server") {
+                  const output = part.output as ProposeServerOutput;
                   return (
                     <ServerCreateForm
                       key={index}
@@ -145,7 +166,7 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                 }
 
                 if (toolName === "list_presets") {
-                  const presets = Array.isArray(output) ? output : [];
+                  const presets = part.output as PresetRow[];
                   return (
                     <div key={index} className="w-full my-2 overflow-x-auto rounded-xl border border-[#3a3a3a]">
                       <table className="w-full text-sm text-[#ececec]">
@@ -159,7 +180,7 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                           </tr>
                         </thead>
                         <tbody>
-                          {presets.map((p: any, i: number) => (
+                          {presets.map((p, i) => (
                             <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
                               <td className="px-4 py-2.5 font-medium">{p.description}</td>
                               <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{p.cpu}</td>
@@ -175,12 +196,12 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                 }
 
                 if (toolName === "list_os") {
-                  const osList = Array.isArray(output) ? output : [];
+                  const osList = part.output as OsOption[];
                   return (
                     <div key={index} className="flex flex-col gap-2 my-2">
                       <div className="text-xs text-[#8e8ea0]">Выберите операционную систему:</div>
                       <div className="flex flex-wrap gap-2">
-                        {osList.map((os: any, i: number) => {
+                        {osList.map((os, i) => {
                           const label = os.full_name || `${os.name} ${os.version}`;
                           return onSendMessage ? (
                             <button
@@ -208,18 +229,17 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                       {toolName}
                     </div>
                     <pre className="text-sm text-[#ececec] whitespace-pre-wrap">
-                      {JSON.stringify(output, null, 2)}
+                      {JSON.stringify(part.output, null, 2)}
                     </pre>
                   </div>
                 );
               }
 
-              // output-error
               if (part.state === "output-error") {
                 return (
                   <div key={index} className="bg-red-900/30 rounded-xl p-3 border border-red-700 text-red-300 text-sm my-2">
                     Ошибка при выполнении: {toolName}
-                    {("errorText" in part) && `: ${(part as any).errorText}`}
+                    {("errorText" in part) && `: ${(part as { errorText?: string }).errorText}`}
                   </div>
                 );
               }
