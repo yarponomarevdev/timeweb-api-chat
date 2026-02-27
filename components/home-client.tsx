@@ -4,31 +4,46 @@ import { useState } from "react";
 import { Chat } from "@/components/chat";
 import { ApiKeySetup } from "@/components/api-key-setup";
 
-const STORAGE_KEY = "timeweb_api_key";
+const TIMEWEB_KEY = "timeweb_api_key";
+const OPENAI_KEY = "openai_api_key";
 
 export default function HomeClient() {
-  const [apiKey, setApiKey] = useState<string>(
-    () => localStorage.getItem(STORAGE_KEY) ?? ""
+  const [timewebToken, setTimewebToken] = useState<string>(
+    () => localStorage.getItem(TIMEWEB_KEY) ?? ""
+  );
+  const [openaiKey, setOpenaiKey] = useState<string>(
+    () => localStorage.getItem(OPENAI_KEY) ?? ""
   );
 
-  const handleSave = (key: string) => {
-    localStorage.setItem(STORAGE_KEY, key);
-    setApiKey(key);
+  const handleSave = (tw: string, oai: string) => {
+    localStorage.setItem(TIMEWEB_KEY, tw);
+    localStorage.setItem(OPENAI_KEY, oai);
+    setTimewebToken(tw);
+    setOpenaiKey(oai);
   };
 
   const handleChangeToken = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setApiKey("");
+    localStorage.removeItem(TIMEWEB_KEY);
+    localStorage.removeItem(OPENAI_KEY);
+    setTimewebToken("");
+    setOpenaiKey("");
   };
 
-  if (!apiKey) {
-    return <ApiKeySetup onSave={handleSave} />;
+  if (!timewebToken || !openaiKey) {
+    return (
+      <ApiKeySetup
+        initialTimewebKey={timewebToken}
+        initialOpenaiKey={openaiKey}
+        onSave={handleSave}
+      />
+    );
   }
 
   return (
     <Chat
-      key={apiKey}
-      timewebToken={apiKey}
+      key={timewebToken}
+      timewebToken={timewebToken}
+      openaiKey={openaiKey}
       onChangeToken={handleChangeToken}
     />
   );

@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    container_name: timeweb-chat-app
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      # OpenAI ключ больше не нужен — пользователь вводит свой
+      # Оставляем поддержку для дефолтной модели и лимитов
+      - OPENAI_MODEL=${OPENAI_MODEL:-gpt-4o}
+      - CHAT_MAX_STEPS=${CHAT_MAX_STEPS:-8}
+    networks:
+      - timeweb-chat
+
+  nginx:
+    image: nginx:alpine
+    container_name: timeweb-chat-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    networks:
+      - timeweb-chat
+
+networks:
+  timeweb-chat:
+    driver: bridge

@@ -1,4 +1,4 @@
-import { openai } from "@ai-sdk/openai";
+import { createOpenAI } from "@ai-sdk/openai";
 import {
   convertToModelMessages,
   stepCountIs,
@@ -52,12 +52,17 @@ export async function POST(req: Request) {
     return new Response("Too Many Requests", { status: 429 });
   }
 
-  const { messages, timewebToken }: { messages: UIMessage[]; timewebToken?: string } = await req.json();
+  const { messages, timewebToken, openaiKey }: { messages: UIMessage[]; timewebToken?: string; openaiKey?: string } = await req.json();
 
   if (!timewebToken) {
     return new Response("Missing Timeweb API token", { status: 401 });
   }
 
+  if (!openaiKey) {
+    return new Response("Missing OpenAI API key", { status: 401 });
+  }
+
+  const openai = createOpenAI({ apiKey: openaiKey });
   const model = process.env.OPENAI_MODEL ?? "gpt-4o";
   const maxSteps = Number(process.env.CHAT_MAX_STEPS ?? 8);
 

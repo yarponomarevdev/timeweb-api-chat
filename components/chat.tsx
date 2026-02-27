@@ -22,17 +22,18 @@ function loadMessages(): UIMessage[] {
 
 interface ChatProps {
   timewebToken: string;
+  openaiKey: string;
   onChangeToken: () => void;
 }
 
-export function Chat({ timewebToken, onChangeToken }: ChatProps) {
+export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
   const [initialMessages] = useState<UIMessage[]>(loadMessages);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { messages, sendMessage, status, setMessages } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { timewebToken },
+      body: { timewebToken, openaiKey },
     }),
     messages: initialMessages,
   });
