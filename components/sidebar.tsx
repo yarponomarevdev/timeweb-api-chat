@@ -1,15 +1,16 @@
 "use client";
 
 import React from "react";
-import { Server, Plus, List, CreditCard, Box, Cpu, X } from "lucide-react";
+import { Server, Plus, List, CreditCard, Box, Cpu, X, Key } from "lucide-react";
 
 interface SidebarProps {
   onNewChat: () => void;
   onQuickAction: (text: string) => void;
   onClose?: () => void;
+  onChangeToken?: () => void;
 }
 
-export function Sidebar({ onNewChat, onQuickAction, onClose }: SidebarProps) {
+export function Sidebar({ onNewChat, onQuickAction, onClose, onChangeToken }: SidebarProps) {
   return (
     <div className="w-64 bg-[#171717] h-full flex flex-col p-3 text-[#ececec] border-r border-[#3a3a3a] flex-shrink-0">
       <div className="flex items-center justify-between px-2 py-3 mb-4">
@@ -38,7 +39,7 @@ export function Sidebar({ onNewChat, onQuickAction, onClose }: SidebarProps) {
         Новый чат
       </button>
 
-      <div className="flex flex-col gap-1 flex-1">
+      <div className="flex flex-col gap-1 flex-1 min-h-0">
         <span className="text-xs font-semibold text-[#8e8ea0] px-2 mb-2">Быстрые действия</span>
 
         {[
@@ -60,6 +61,21 @@ export function Sidebar({ onNewChat, onQuickAction, onClose }: SidebarProps) {
           </button>
         ))}
       </div>
+
+      {onChangeToken && (
+        <div className="mt-auto pt-3 border-t border-[#3a3a3a]">
+          <button
+            onClick={() => {
+              onChangeToken();
+              onClose?.();
+            }}
+            className="flex items-center gap-2 w-full hover:bg-[#2f2f2f] text-sm py-2 px-3 rounded-lg transition-colors text-left text-[#8e8ea0] hover:text-[#ececec]"
+          >
+            <Key size={16} />
+            Изменить API-ключ
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -9,9 +9,9 @@ import type {
 
 const BASE = "https://api.timeweb.cloud/api/v1";
 
-function getHeaders() {
+function getHeaders(token: string) {
   return {
-    Authorization: `Bearer ${process.env.TIMEWEB_TOKEN}`,
+    Authorization: `Bearer ${token}`,
     "Content-Type": "application/json",
     Accept: "application/json",
   };
@@ -19,11 +19,12 @@ function getHeaders() {
 
 async function apiRequest<T>(
   path: string,
+  token: string,
   options: RequestInit = {}
 ): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     ...options,
-    headers: { ...getHeaders(), ...options.headers },
+    headers: { ...getHeaders(token), ...options.headers },
   });
 
   if (!res.ok) {
@@ -37,55 +38,59 @@ async function apiRequest<T>(
   return res.json();
 }
 
-export async function listServers(): Promise<TimewebServer[]> {
-  const data = await apiRequest<{ servers: TimewebServer[] }>("/servers");
+export async function listServers(token: string): Promise<TimewebServer[]> {
+  const data = await apiRequest<{ servers: TimewebServer[] }>("/servers", token);
   return data.servers ?? [];
 }
 
-export async function getServer(id: number): Promise<TimewebServer> {
-  const data = await apiRequest<{ server: TimewebServer }>(`/servers/${id}`);
+export async function getServer(token: string, id: number): Promise<TimewebServer> {
+  const data = await apiRequest<{ server: TimewebServer }>(`/servers/${id}`, token);
   return data.server;
 }
 
 export async function createServer(
+  token: string,
   params: TimewebCreateServerParams
 ): Promise<TimewebServer> {
-  const data = await apiRequest<{ server: TimewebServer }>("/servers", {
+  const data = await apiRequest<{ server: TimewebServer }>("/servers", token, {
     method: "POST",
     body: JSON.stringify(params),
   });
   return data.server;
 }
 
-export async function deleteServer(id: number): Promise<{ action_fields: Record<string, string> } | null> {
-  return apiRequest(`/servers/${id}`, { method: "DELETE" });
+export async function deleteServer(token: string, id: number): Promise<{ action_fields: Record<string, string> } | null> {
+  return apiRequest(`/servers/${id}`, token, { method: "DELETE" });
 }
 
 export async function serverAction(
+  token: string,
   id: number,
   action: ServerAction
 ): Promise<{ action: string; result: boolean }> {
-  return apiRequest(`/servers/${id}/action`, {
+  return apiRequest(`/servers/${id}/action`, token, {
     method: "POST",
     body: JSON.stringify({ action }),
   });
 }
 
-export async function listPresets(): Promise<TimewebPreset[]> {
+export async function listPresets(token: string): Promise<TimewebPreset[]> {
   const data = await apiRequest<{ server_presets: TimewebPreset[] }>(
-    "/presets/servers"
+    "/presets/servers",
+    token
   );
   return data.server_presets ?? [];
 }
 
-export async function listOS(): Promise<TimewebOS[]> {
-  const data = await apiRequest<{ servers_os: TimewebOS[] }>("/os/servers");
+export async function listOS(token: string): Promise<TimewebOS[]> {
+  const data = await apiRequest<{ servers_os: TimewebOS[] }>("/os/servers", token);
   return data.servers_os ?? [];
 }
 
-export async function getBalance(): Promise<TimewebFinances> {
+export async function getBalance(token: string): Promise<TimewebFinances> {
   const data = await apiRequest<{ finances: TimewebFinances }>(
-    "/account/finances"
+    "/account/finances",
+    token
   );
   return data.finances;
 }

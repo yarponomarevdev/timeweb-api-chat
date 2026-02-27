@@ -20,13 +20,21 @@ function loadMessages(): UIMessage[] {
   }
 }
 
-export function Chat() {
+interface ChatProps {
+  timewebToken: string;
+  onChangeToken: () => void;
+}
+
+export function Chat({ timewebToken, onChangeToken }: ChatProps) {
   const [initialMessages] = useState<UIMessage[]>(loadMessages);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const { messages, sendMessage, status, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: "/api/chat" }),
-    initialMessages,
+    transport: new DefaultChatTransport({
+      api: "/api/chat",
+      body: { timewebToken },
+    }),
+    messages: initialMessages,
   });
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -110,6 +118,7 @@ export function Chat() {
           onNewChat={handleNewChat}
           onQuickAction={handleQuickAction}
           onClose={() => setSidebarOpen(false)}
+          onChangeToken={onChangeToken}
         />
       </div>
 

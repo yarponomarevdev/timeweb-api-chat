@@ -5,7 +5,7 @@ import {
   streamText,
   type UIMessage,
 } from "ai";
-import { tools } from "@/lib/tools";
+import { createTools } from "@/lib/tools";
 import { checkRateLimit } from "@/lib/rate-limit";
 
 export const maxDuration = 60;
@@ -52,7 +52,11 @@ export async function POST(req: Request) {
     return new Response("Too Many Requests", { status: 429 });
   }
 
-  const { messages }: { messages: UIMessage[] } = await req.json();
+  const { messages, timewebToken }: { messages: UIMessage[]; timewebToken?: string } = await req.json();
+
+  if (!timewebToken) {
+    return new Response("Missing Timeweb API token", { status: 401 });
+  }
 
   const model = process.env.OPENAI_MODEL ?? "gpt-4o";
   const maxSteps = Number(process.env.CHAT_MAX_STEPS ?? 8);
@@ -62,7 +66,7 @@ export async function POST(req: Request) {
     system: SYSTEM_PROMPT,
     messages: await convertToModelMessages(messages),
     stopWhen: stepCountIs(maxSteps),
-    tools,
+    tools: createTools(timewebToken),
   });
 
   return result.toUIMessageStreamResponse();
