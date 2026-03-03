@@ -1,70 +1,71 @@
-# Claude Code — инструкции для автоматической работы
+# CLAUDE.md
 
-## Режим работы
-Работай **полностью автономно**. Пользователь даёт задачу — выполняй без лишних уточнений.
-- Не спрашивай разрешения на чтение/редактирование/создание файлов
-- Не спрашивай разрешения на запуск `npm run build`, `npm run lint`, `npm run dev`
-- Не спрашивай разрешения на `git add`, `git commit`
-- Задавай вопрос только если задача **принципиально неоднозначна** и без ответа нельзя двигаться дальше
-
-## Рабочий процесс для каждой задачи
-1. Прочитай нужные файлы
-2. Выполни изменения
-3. Запусти `npm run lint` и `npm run build` для проверки
-4. Исправь ошибки если есть
-5. Сделай git commit с понятным сообщением на русском языке
-6. Отчитайся кратко: что сделано, что изменено
-
-## Проект: timeweb-api-chat
-
-**Стек:** Next.js 16 (App Router) + TypeScript + Tailwind CSS v4 + shadcn/ui + AI SDK (Vercel) + Zod
-
-**Структура:**
-```
-app/
-  page.tsx          — главная страница (UI чата)
-  layout.tsx        — корневой layout
-  globals.css       — глобальные стили
-  api/
-    chat/route.ts   — API роут для чата с LLM + Timeweb API tools
-components/
-  ui/               — shadcn компоненты (button, input, scroll-area, avatar, separator)
-lib/
-  utils.ts          — утилиты (cn)
-types/              — TypeScript типы
-```
-
-**Переменные окружения** (не читать .env файлы):
-- `TIMEWEB_TOKEN` — токен Timeweb API
-- `OPENAI_API_KEY` — ключ OpenAI
-
-**Ключевые зависимости:**
-- `ai` + `@ai-sdk/openai` + `@ai-sdk/react` — Vercel AI SDK
-- `zod` — валидация схем для tools
-- `react-markdown` + `remark-gfm` — рендер markdown в чате
-- `shadcn/ui` — UI компоненты
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Команды
+
 ```bash
-npm run dev    # запуск dev сервера
-npm run build  # сборка (обязательная проверка перед коммитом)
-npm run lint   # линтер
+npm run dev      # dev сервер на http://localhost:3000
+npm run build    # production сборка (обязательно перед коммитом)
+npm run lint     # ESLint проверка
+npm run start    # запуск production сборки
 ```
 
-## Git-конвенция
-Коммит-сообщения на русском:
-- `feat: <описание>` — новая функциональность
-- `fix: <описание>` — исправление бага
-- `refactor: <описание>` — рефакторинг
-- `chore: <описание>` — настройки, зависимости
+Тесты отсутствуют. Перед коммитом запускать `npm run build` для проверки TypeScript.
 
-## Ограничения
-- Не читать и не писать `.env`, `.env.local`, `.env.*`
-- Не пушить в remote без явного запроса пользователя
-- Не удалять файлы без явного запроса
+## Архитектура
 
-## Работа с Timeweb API
-Timeweb Cloud API: https://timeweb.cloud/api-docs
-- REST API для управления облачными серверами, хранилищами, DNS и т.д.
-- Аутентификация через Bearer token (`TIMEWEB_TOKEN`)
-- Инструменты (tools) для AI SDK описывают операции Timeweb API
+**Принцип BYOK (Bring Your Own Key):** ключи API хранятся только в `localStorage` браузера и передаются с каждым запросом в заголовках (`x-timeweb-token`, `x-openai-key`). Бэкенд не хранит ключи.
+
+### Поток данных
+
+```
+HomeClient → ApiKeySetup (первый запуск) → Chat → API route
+                                                       ↓
+                                              lib/tools.ts (8 Vercel AI tools)
+                                                       ↓
+                                              lib/timeweb.ts (REST клиент)
+                                                       ↓
+                                              api.timeweb.com/api/v1
+```
+
+### Ключевые файлы
+
+| Файл | Назначение |
+|------|-----------|
+| `app/api/chat/route.ts` | Единственный API endpoint. Принимает ключи из заголовков, передаёт их в tools через `toolContext`. Rate limiting (20 req/min). |
+| `lib/tools.ts` | 8 AI tools: `list_servers`, `get_server`, `create_server`, `delete_server`, `server_action`, `propose_server`, `list_presets`, `list_os`, `get_balance`. |
+| `lib/timeweb.ts` | REST клиент Timeweb API. Все методы получают `token` как параметр. |
+| `lib/rate-limit.ts` | In-memory sliding window лимитер. |
+| `components/home-client.tsx` | Управляет состоянием ключей, переключает между `ApiKeySetup` и `Chat`. |
+| `components/chat.tsx` | Основной чат: история в `localStorage`, scroll-lock, retry. |
+| `components/message.tsx` | Рендер сообщений и tool-результатов (ServerCard, ServerCreateForm, таблицы, баланс). |
+
+### Двухшаговое создание серверов
+
+`propose_server` → `ServerCreateForm` (пользователь подтверждает) → `create_server`. Форма рендерится через специальный `toolInvocation` с типом `propose_server`.
+
+### Env переменные
+
+```
+TIMEWEB_TOKEN   # fallback токен (если не передан из клиента)
+OPENAI_API_KEY  # fallback ключ OpenAI (если не передан из клиента)
+```
+
+Файл `.env.local.example` содержит шаблон.
+
+## Стек
+
+- **Next.js 16** App Router, SSR отключён для чата (`dynamic('...', { ssr: false })`)
+- **Vercel AI SDK** v6: `streamText`, `tool` из `ai`; `@ai-sdk/openai` провайдер; `useChat` из `@ai-sdk/react`
+- **Tailwind CSS v4** + `tw-animate-css`
+- **shadcn/ui** компоненты в `components/ui/`
+- **Zod v4** — схемы параметров для tools
+- **react-markdown** + **remark-gfm** — рендер ответов ассистента
+
+## Соглашения
+
+- Все комментарии и строки интерфейса — на **русском языке**
+- Коммит-сообщения — на **русском языке** с префиксом (`feat:`, `fix:`, `chore:` и т.д.)
+- Тёмная тема: фон `#212121`, акцент `#10a37f` (определены в `globals.css` как CSS-переменные)
+- shadcn компоненты добавлять через `npx shadcn add <component>`
