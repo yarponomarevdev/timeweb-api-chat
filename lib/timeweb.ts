@@ -9,6 +9,11 @@ import type {
 
 const BASE = "https://api.timeweb.cloud/api/v1";
 
+// Коды ошибок, при которых стоит повторить запрос
+const RETRYABLE_STATUSES = new Set([429, 502, 503, 504]);
+const RETRY_ATTEMPTS = 3;
+const RETRY_DELAY_MS = 600;
+
 function getHeaders(token: string) {
   return {
     Authorization: `Bearer ${token}`,
@@ -22,20 +27,38 @@ async function apiRequest<T>(
   token: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    ...options,
-    headers: { ...getHeaders(token), ...options.headers },
-  });
+  // Retry делаем только для read-only запросов, чтобы избежать дублей
+  const isReadOnly = !options.method || options.method === "GET";
+  const maxAttempts = isReadOnly ? RETRY_ATTEMPTS : 1;
 
-  if (!res.ok) {
-    const error = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(
-      `Timeweb API error ${res.status}: ${error.message || JSON.stringify(error)}`
-    );
+  let lastError: Error = new Error("Unknown error");
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    if (attempt > 0) {
+      await new Promise((r) => setTimeout(r, RETRY_DELAY_MS * attempt));
+    }
+
+    const res = await fetch(`${BASE}${path}`, {
+      ...options,
+      headers: { ...getHeaders(token), ...options.headers },
+    });
+
+    if (!res.ok) {
+      if (RETRYABLE_STATUSES.has(res.status) && attempt < maxAttempts - 1) {
+        lastError = new Error(`Timeweb API error ${res.status}: ${res.statusText}`);
+        continue;
+      }
+      const error = await res.json().catch(() => ({ message: res.statusText }));
+      throw new Error(
+        `Timeweb API error ${res.status}: ${error.message || JSON.stringify(error)}`
+      );
+    }
+
+    if (res.status === 204) return null as T;
+    return res.json();
   }
 
-  if (res.status === 204) return null as T;
-  return res.json();
+  throw lastError;
 }
 
 export async function listServers(token: string): Promise<TimewebServer[]> {

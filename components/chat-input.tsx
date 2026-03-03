@@ -14,9 +14,13 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInp
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
+    const el = textareaRef.current;
+    if (el) {
+      el.style.height = "auto";
+      const newHeight = Math.min(el.scrollHeight, 200);
+      el.style.height = `${newHeight}px`;
+      // Скрываем scroll indicator пока контент не достиг max-height
+      el.style.overflowY = newHeight >= 200 ? "auto" : "hidden";
     }
   }, [input]);
 
@@ -39,8 +43,8 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInp
         value={input}
         onChange={onInputChange}
         onKeyDown={handleKeyDown}
-        placeholder="Напишите сообщение... (Enter для отправки)"
-        className="w-full max-h-[200px] bg-transparent text-[#ececec] placeholder-[#8e8ea0] resize-none focus:outline-none p-2"
+        placeholder="Напишите запрос..."
+        className="w-full max-h-[200px] bg-transparent text-[#ececec] placeholder-[#8e8ea0] resize-none focus:outline-none p-2 no-scrollbar"
         rows={1}
         disabled={isLoading}
       />
