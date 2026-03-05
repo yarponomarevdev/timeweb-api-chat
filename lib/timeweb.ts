@@ -5,6 +5,11 @@ import type {
   TimewebFinances,
   TimewebCreateServerParams,
   ServerAction,
+  TimewebSSHKey,
+  TimewebBackup,
+  TimewebFirewallGroup,
+  TimewebFirewallRule,
+  TimewebServerStats,
 } from "@/types/timeweb";
 
 const BASE = "https://api.timeweb.cloud/api/v1";
@@ -91,10 +96,13 @@ export async function serverAction(
   id: number,
   action: ServerAction
 ): Promise<{ action: string; result: boolean }> {
-  return apiRequest(`/servers/${id}/action`, token, {
-    method: "POST",
-    body: JSON.stringify({ action }),
-  });
+  // API возвращает 204 No Content при успехе — считаем это успешным результатом
+  const data = await apiRequest<{ action: string; result: boolean } | null>(
+    `/servers/${id}/action`,
+    token,
+    { method: "POST", body: JSON.stringify({ action }) }
+  );
+  return data ?? { action, result: true };
 }
 
 export async function listPresets(token: string): Promise<TimewebPreset[]> {
@@ -118,13 +126,190 @@ export async function getBalance(token: string): Promise<TimewebFinances> {
   return data.finances;
 }
 
-export function getServerMainIP(server: TimewebServer): string {
-  for (const net of server.networks ?? []) {
-    for (const ip of net.ips ?? []) {
-      if (ip.is_main && ip.type === "ipv4") return ip.ip;
-    }
+
+// ─── SSH-ключи ───────────────────────────────────────────────────────────────
+
+export async function listSSHKeys(token: string): Promise<TimewebSSHKey[]> {
+  const data = await apiRequest<{ ssh_keys: TimewebSSHKey[] }>("/ssh-keys", token);
+  return data.ssh_keys ?? [];
+}
+
+export async function createSSHKey(
+  token: string,
+  params: { name: string; body: string }
+): Promise<TimewebSSHKey> {
+  const data = await apiRequest<{ ssh_key: TimewebSSHKey }>("/ssh-keys", token, {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+  return data.ssh_key;
+}
+
+export async function deleteSSHKey(token: string, id: number): Promise<null> {
+  return apiRequest(`/ssh-keys/${id}`, token, { method: "DELETE" });
+}
+
+// ─── Изменение конфигурации (resize) ────────────────────────────────────────
+
+export async function resizeServer(
+  token: string,
+  serverId: number,
+  presetId: number
+): Promise<TimewebServer> {
+  const data = await apiRequest<{ server: TimewebServer }>(`/servers/${serverId}`, token, {
+    method: "PATCH",
+    body: JSON.stringify({ preset_id: presetId }),
+  });
+  return data.server;
+}
+
+// ─── Бэкапы ─────────────────────────────────────────────────────────────────
+
+export async function listBackups(token: string, serverId: number): Promise<TimewebBackup[]> {
+  const data = await apiRequest<{ backups: TimewebBackup[] }>(
+    `/servers/${serverId}/backups`,
+    token
+  );
+  return data.backups ?? [];
+}
+
+export async function createBackup(
+  token: string,
+  serverId: number,
+  comment?: string
+): Promise<TimewebBackup> {
+  const data = await apiRequest<{ backup: TimewebBackup }>(
+    `/servers/${serverId}/backups`,
+    token,
+    { method: "POST", body: JSON.stringify({ comment: comment ?? "" }) }
+  );
+  return data.backup;
+}
+
+export async function restoreBackup(
+  token: string,
+  serverId: number,
+  backupId: number
+): Promise<{ result: boolean }> {
+  return apiRequest(`/servers/${serverId}/backups/${backupId}/restore`, token, {
+    method: "PUT",
+  });
+}
+
+// ─── Статистика ──────────────────────────────────────────────────────────────
+
+export async function getServerStats(
+  token: string,
+  serverId: number
+): Promise<TimewebServerStats> {
+  const to = new Date();
+  const from = new Date(to.getTime() - 60 * 60 * 1000); // последний час
+  const params = new URLSearchParams({
+    date_from: from.toISOString(),
+    date_to: to.toISOString(),
+  });
+  // Добавляем нужные ключи метрик
+  for (const key of ["cpu_load", "network_traffic", "disk", "ram"]) {
+    params.append("keys[]", key);
   }
-  return "—";
+  const data = await apiRequest<{ statistics?: TimewebServerStats | null } & Partial<TimewebServerStats>>(
+    `/servers/${serverId}/statistics?${params}`,
+    token
+  );
+  const source = data.statistics ?? data;
+  return {
+    cpu_load: Array.isArray(source.cpu_load) ? source.cpu_load : [],
+    network_traffic: Array.isArray(source.network_traffic) ? source.network_traffic : [],
+    disk: Array.isArray(source.disk) ? source.disk : [],
+    ram: Array.isArray(source.ram) ? source.ram : [],
+  };
+}
+
+// ─── Firewall ────────────────────────────────────────────────────────────────
+
+export async function listFirewalls(token: string): Promise<TimewebFirewallGroup[]> {
+  const data = await apiRequest<{ firewall_groups: TimewebFirewallGroup[] }>(
+    "/firewalls",
+    token
+  );
+  return data.firewall_groups ?? [];
+}
+
+export async function createFirewall(
+  token: string,
+  params: { name: string; description?: string }
+): Promise<TimewebFirewallGroup> {
+  const data = await apiRequest<{ firewall_group: TimewebFirewallGroup }>("/firewalls", token, {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+  return data.firewall_group;
+}
+
+export async function deleteFirewall(token: string, id: string): Promise<null> {
+  return apiRequest(`/firewalls/${id}`, token, { method: "DELETE" });
+}
+
+export async function listFirewallRules(
+  token: string,
+  firewallId: string
+): Promise<TimewebFirewallRule[]> {
+  const data = await apiRequest<{ firewall_rules: TimewebFirewallRule[] }>(
+    `/firewalls/${firewallId}/rules`,
+    token
+  );
+  return data.firewall_rules ?? [];
+}
+
+export async function addFirewallRule(
+  token: string,
+  firewallId: string,
+  params: {
+    direction: "ingress" | "egress";
+    protocol: "tcp" | "udp" | "icmp" | "all";
+    port?: string;
+    cidr: string;
+    description?: string;
+  }
+): Promise<TimewebFirewallRule> {
+  const data = await apiRequest<{ firewall_rule: TimewebFirewallRule }>(
+    `/firewalls/${firewallId}/rules`,
+    token,
+    { method: "POST", body: JSON.stringify(params) }
+  );
+  return data.firewall_rule;
+}
+
+export async function deleteFirewallRule(
+  token: string,
+  firewallId: string,
+  ruleId: string
+): Promise<null> {
+  return apiRequest(`/firewalls/${firewallId}/rules/${ruleId}`, token, { method: "DELETE" });
+}
+
+export async function attachFirewallToServer(
+  token: string,
+  firewallId: string,
+  serverId: number
+): Promise<null> {
+  return apiRequest(`/firewalls/${firewallId}/resources/servers`, token, {
+    method: "POST",
+    body: JSON.stringify({ resource_id: String(serverId) }),
+  });
+}
+
+/**
+ * Возвращает размер диска сервера в ГБ.
+ * Сначала проверяет поле disk, затем суммирует массив disks[].size.
+ * Если значение > 1000 — считаем МБ и делим на 1024, иначе уже ГБ.
+ */
+export function getServerDiskGB(server: TimewebServer): number {
+  const raw = server.disk
+    || server.disks?.reduce((sum, d) => sum + (d.size ?? 0), 0)
+    || 0;
+  if (!raw) return 0;
+  return raw > 1000 ? Math.round(raw / 1024) : raw;
 }
 
 export function getStatusLabel(status: TimewebServer["status"]): string {

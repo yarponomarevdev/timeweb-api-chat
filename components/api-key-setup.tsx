@@ -7,9 +7,10 @@ interface ApiKeySetupProps {
   initialTimewebKey?: string;
   initialOpenaiKey?: string;
   onSave: (timewebKey: string, openaiKey: string) => void;
+  onCancel?: () => void;
 }
 
-export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onSave }: ApiKeySetupProps) {
+export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onSave, onCancel }: ApiKeySetupProps) {
   const [timewebKey, setTimewebKey] = useState(initialTimewebKey);
   const [openaiKey, setOpenaiKey] = useState(initialOpenaiKey);
   const [showTimeweb, setShowTimeweb] = useState(false);
@@ -25,17 +26,33 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
     onSave(timewebKey.trim(), openaiKey.trim());
   };
 
+  // Предупреждения о формате (не блокируют отправку)
+  const timewebWarning = timewebKey && !timewebKey.startsWith("eyJ")
+    ? "Timeweb токен обычно начинается с eyJ (JWT)"
+    : null;
+  const openaiWarning = openaiKey && !openaiKey.startsWith("sk-")
+    ? "OpenAI ключ обычно начинается с sk-"
+    : null;
+
   return (
     <div className="min-h-screen bg-[#212121] flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
 
         {/* Логотип */}
         <div className="flex flex-col items-center mb-8">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="self-start mb-4 flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] transition-colors"
+            >
+              ← Назад
+            </button>
+          )}
           <div className="w-12 h-12 bg-[#10a37f]/10 ring-1 ring-[#10a37f]/25 rounded-2xl flex items-center justify-center mb-4">
             <Server size={24} className="text-[#10a37f]" />
           </div>
           <h1 className="text-xl font-bold text-[#ececec]">Timeweb Manager</h1>
-          <p className="text-[#5a5a6a] text-sm mt-1">Настройка подключения</p>
+          <p className="text-[#5a5a6a] text-sm mt-1">{onCancel ? "Изменить API-ключи" : "Настройка подключения"}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -76,6 +93,9 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
               </button>
             </div>
             {errors.timeweb && <p className="text-red-400/80 text-xs pl-1">{errors.timeweb}</p>}
+            {!errors.timeweb && timewebWarning && (
+              <p className="text-yellow-500/70 text-xs pl-1">{timewebWarning}</p>
+            )}
           </div>
 
           {/* OpenAI API */}
@@ -113,6 +133,9 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
               </button>
             </div>
             {errors.openai && <p className="text-red-400/80 text-xs pl-1">{errors.openai}</p>}
+            {!errors.openai && openaiWarning && (
+              <p className="text-yellow-500/70 text-xs pl-1">{openaiWarning}</p>
+            )}
           </div>
 
           {/* Заметка о безопасности */}

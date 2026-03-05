@@ -5,7 +5,7 @@ import type { UIMessage } from "ai";
 import { isTextUIPart, isToolUIPart, getToolName } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Bot, User, RotateCcw } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { ServerCard } from "./server-card";
 import { ServerCreateForm } from "./server-create-form";
 import type {
@@ -18,66 +18,84 @@ import type {
   PresetSummary,
   OsOption,
   BalanceOutput,
+  SSHKeySummary,
+  CreateSSHKeyOutput,
+  DeleteSSHKeyOutput,
+  ResizeServerOutput,
+  BackupSummary,
+  CreateBackupOutput,
+  RestoreBackupOutput,
+  ServerStatsOutput,
+  FirewallGroupSummary,
+  CreateFirewallOutput,
+  FirewallRuleSummary,
+  AddFirewallRuleOutput,
+  AttachFirewallOutput,
 } from "@/lib/tools";
 
 interface MessageProps {
   message: UIMessage;
   onRetry?: () => void;
   onSendMessage?: (text: string) => void;
+  timewebToken?: string;
 }
 
 type PresetRow = PresetSummary & { description: string };
 
-export function Message({ message, onRetry, onSendMessage }: MessageProps) {
+export function Message({ message, onRetry, onSendMessage, timewebToken }: MessageProps) {
   const isUser = message.role === "user";
 
-  return (
-    <div className={`flex w-full mb-6 ${isUser ? "justify-end" : "justify-start"}`}>
-      <div className={`flex max-w-3xl w-full gap-4 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
-        <div className="flex-shrink-0 mt-1">
-          {isUser ? (
-            <div className="w-8 h-8 bg-[#3a3a3a] rounded-full flex items-center justify-center">
-              <User size={18} className="text-[#ececec]" />
-            </div>
-          ) : (
-            <div className="w-8 h-8 bg-[#10a37f] rounded-full flex items-center justify-center">
-              <Bot size={18} className="text-white" />
-            </div>
-          )}
-        </div>
-
-        <div className={`flex flex-col gap-2 min-w-0 ${isUser ? "items-end" : "items-start"}`}>
-          {isUser && onRetry && (
+  if (isUser) {
+    return (
+      <div className="flex justify-end mb-4">
+        <div className="flex flex-col items-end gap-1 max-w-[80%]">
+          {message.parts?.map((part, index) => {
+            if (isTextUIPart(part)) {
+              if (part.text.startsWith("Подтверждаю. Создай сервер:")) return null;
+              return (
+                <div key={index} className="prose-chat bg-[#2f2f2f] px-4 py-3 rounded-2xl rounded-tr-sm">
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
+                </div>
+              );
+            }
+            return null;
+          })}
+          {onRetry && (
             <button
               onClick={onRetry}
-              className="flex items-center gap-1.5 text-xs text-[#8e8ea0] hover:text-[#ececec] transition-colors px-2 py-1 rounded-lg hover:bg-[#2f2f2f] order-last mt-1"
+              className="flex items-center gap-1.5 text-xs text-[#8e8ea0] hover:text-[#ececec] transition-colors px-2 py-1 rounded-lg hover:bg-[#2f2f2f]"
               title="Повторить запрос"
             >
               <RotateCcw size={12} />
               Повторить
             </button>
           )}
-          {message.parts?.map((part, index) => {
-            if (isTextUIPart(part)) {
-              if (isUser && part.text.startsWith("Подтверждаю. Создай сервер:")) {
-                return null;
-              }
-              return (
-                <div
-                  key={index}
-                  className={`prose-chat ${
-                    isUser ? "bg-[#2f2f2f] px-4 py-3 rounded-2xl rounded-tr-sm" : ""
-                  }`}
-                >
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {part.text}
-                  </ReactMarkdown>
-                </div>
-              );
-            }
+        </div>
+      </div>
+    );
+  }
 
-            if (isToolUIPart(part)) {
-              const toolName = getToolName(part);
+  // ИИ — документ-стиль, полная ширина
+  const hasContent = message.parts?.some(
+    (p) => isTextUIPart(p) || isToolUIPart(p)
+  );
+  if (!hasContent) return null;
+
+  return (
+    <div className="mb-6">
+      <div className="text-xs font-medium text-[#10a37f] mb-2 uppercase tracking-wide">Timeweb</div>
+      <div className="flex flex-col gap-2">
+        {message.parts?.map((part, index) => {
+          if (isTextUIPart(part)) {
+            return (
+              <div key={index} className="prose-chat">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
+              </div>
+            );
+          }
+
+          if (isToolUIPart(part)) {
+            const toolName = getToolName(part);
 
               if (part.state === "input-available" || part.state === "input-streaming") {
                 return (
@@ -94,7 +112,7 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                   return (
                     <div key={index} className="flex flex-col gap-2 w-full">
                       {output.map((s, i) => (
-                        <ServerCard key={i} server={s} onAction={onSendMessage} />
+                        <ServerCard key={i} server={s} onAction={onSendMessage} timewebToken={timewebToken} />
                       ))}
                     </div>
                   );
@@ -104,7 +122,7 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                   const output = part.output as ServerSummaryWithNetworks;
                   return (
                     <div key={index} className="flex flex-col gap-2 w-full">
-                      <ServerCard server={output} onAction={onSendMessage} />
+                      <ServerCard server={output} onAction={onSendMessage} timewebToken={timewebToken} />
                     </div>
                   );
                 }
@@ -118,7 +136,7 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                       </div>
                     );
                   }
-                  return <ServerCard key={index} server={output as ServerSummary} onAction={onSendMessage} />;
+                  return <ServerCard key={index} server={output as ServerSummary} onAction={onSendMessage} timewebToken={timewebToken} />;
                 }
 
                 if (toolName === "get_balance") {
@@ -222,6 +240,204 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
                   );
                 }
 
+                if (toolName === "list_ssh_keys") {
+                  const keys = part.output as SSHKeySummary[];
+                  if (keys.length === 0) {
+                    return (
+                      <div key={index} className="text-sm text-[#8e8ea0] my-2">
+                        SSH-ключей пока нет.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={index} className="w-full my-2 overflow-x-auto rounded-xl border border-[#3a3a3a]">
+                      <table className="w-full text-sm text-[#ececec]">
+                        <thead>
+                          <tr className="bg-[#171717] text-[#8e8ea0] text-xs uppercase tracking-wide">
+                            <th className="text-left px-4 py-3 font-medium">ID</th>
+                            <th className="text-left px-4 py-3 font-medium">Название</th>
+                            <th className="text-left px-4 py-3 font-medium">Fingerprint</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {keys.map((k, i) => (
+                            <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
+                              <td className="px-4 py-2.5 font-mono text-[#8e8ea0]">{k.id}</td>
+                              <td className="px-4 py-2.5 font-medium">{k.name}</td>
+                              <td className="px-4 py-2.5 font-mono text-xs text-[#8e8ea0] truncate max-w-[200px]">{k.fingerprint}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+
+                if (toolName === "create_ssh_key") {
+                  const output = part.output as CreateSSHKeyOutput;
+                  return (
+                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                      {output.message} (fingerprint: <span className="font-mono text-xs">{output.fingerprint}</span>)
+                    </div>
+                  );
+                }
+
+                if (toolName === "delete_ssh_key") {
+                  const output = part.output as DeleteSSHKeyOutput;
+                  return (
+                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                      {output.message}
+                    </div>
+                  );
+                }
+
+                if (toolName === "resize_server") {
+                  const output = part.output as ResizeServerOutput;
+                  return (
+                    <div key={index} className="bg-[#2f2f2f] rounded-xl p-4 border border-[#3a3a3a] my-2 max-w-sm">
+                      <div className="text-sm font-semibold text-[#ececec] mb-2">{output.name}</div>
+                      <div className="text-xs text-[#8e8ea0] mb-3">{output.message}</div>
+                      <div className="flex gap-4 text-xs text-[#8e8ea0]">
+                        <span>{output.cpu} CPU</span>
+                        <span>{output.ram_gb} GB RAM</span>
+                        <span>{output.disk_gb} GB NVMe</span>
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (toolName === "list_backups") {
+                  const backups = part.output as BackupSummary[];
+                  if (backups.length === 0) {
+                    return (
+                      <div key={index} className="text-sm text-[#8e8ea0] my-2">
+                        Бэкапов пока нет.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={index} className="w-full my-2 overflow-x-auto rounded-xl border border-[#3a3a3a]">
+                      <table className="w-full text-sm text-[#ececec]">
+                        <thead>
+                          <tr className="bg-[#171717] text-[#8e8ea0] text-xs uppercase tracking-wide">
+                            <th className="text-left px-4 py-3 font-medium">ID</th>
+                            <th className="text-left px-4 py-3 font-medium">Название</th>
+                            <th className="text-center px-3 py-3 font-medium">Размер</th>
+                            <th className="text-left px-4 py-3 font-medium">Создан</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {backups.map((b, i) => (
+                            <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
+                              <td className="px-4 py-2.5 font-mono text-[#8e8ea0]">{b.id}</td>
+                              <td className="px-4 py-2.5">{b.name || "—"}</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{b.size_mb} MB</td>
+                              <td className="px-4 py-2.5 text-[#8e8ea0] text-xs">{new Date(b.created_at).toLocaleString("ru")}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+
+                if (toolName === "create_backup") {
+                  const output = part.output as CreateBackupOutput;
+                  return (
+                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                      {output.message}
+                    </div>
+                  );
+                }
+
+                if (toolName === "restore_backup") {
+                  const output = part.output as RestoreBackupOutput;
+                  return (
+                    <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+                      {output.message}
+                    </div>
+                  );
+                }
+
+                if (toolName === "get_server_stats") {
+                  const s = part.output as ServerStatsOutput;
+                  return (
+                    <div key={index} className="bg-[#2f2f2f] rounded-xl p-4 border border-[#3a3a3a] my-2 max-w-sm">
+                      <div className="text-xs text-[#8e8ea0] mb-3 uppercase tracking-wide">Статистика за {s.period}</div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <StatItem label="CPU" value={s.cpu_avg !== null ? `${s.cpu_avg}%` : "—"} />
+                        <StatItem label="RAM" value={s.ram_avg !== null ? `${s.ram_avg}%` : "—"} />
+                        <StatItem label="Диск" value={s.disk_avg !== null ? `${s.disk_avg}%` : "—"} />
+                        <StatItem label="Сеть ↓" value={s.net_in_avg !== null ? `${s.net_in_avg} B/s` : "—"} />
+                      </div>
+                    </div>
+                  );
+                }
+
+                if (toolName === "list_firewalls") {
+                  const groups = part.output as FirewallGroupSummary[];
+                  if (groups.length === 0) {
+                    return (
+                      <div key={index} className="text-sm text-[#8e8ea0] my-2">
+                        Групп безопасности пока нет.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={index} className="w-full my-2 overflow-x-auto rounded-xl border border-[#3a3a3a]">
+                      <table className="w-full text-sm text-[#ececec]">
+                        <thead>
+                          <tr className="bg-[#171717] text-[#8e8ea0] text-xs uppercase tracking-wide">
+                            <th className="text-left px-4 py-3 font-medium">Название</th>
+                            <th className="text-center px-3 py-3 font-medium">Правил</th>
+                            <th className="text-center px-3 py-3 font-medium">Серверов</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {groups.map((g, i) => (
+                            <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
+                              <td className="px-4 py-2.5 font-medium">
+                                {g.name}
+                                {g.description && <div className="text-xs text-[#8e8ea0] font-normal">{g.description}</div>}
+                              </td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{g.rules_count}</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{g.resources_count}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+
+                if (toolName === "create_firewall") {
+                  const output = part.output as CreateFirewallOutput;
+                  return (
+                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                      {output.message} (ID: <span className="font-mono text-xs">{output.id}</span>)
+                    </div>
+                  );
+                }
+
+                if (toolName === "add_firewall_rule") {
+                  const output = part.output as AddFirewallRuleOutput;
+                  return (
+                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                      {output.message}: {output.direction} {output.protocol}
+                      {output.port ? `:${output.port}` : ""} {output.cidr}
+                    </div>
+                  );
+                }
+
+                if (toolName === "delete_firewall" || toolName === "delete_firewall_rule" || toolName === "attach_firewall_to_server") {
+                  const output = part.output as { success: boolean; message: string } | AttachFirewallOutput;
+                  return (
+                    <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+                      {output.message}
+                    </div>
+                  );
+                }
+
                 // Fallback для неизвестных tools
                 return (
                   <div key={index} className="bg-[#171717] rounded-xl p-4 border border-[#3a3a3a] my-2 w-full overflow-x-auto">
@@ -247,8 +463,16 @@ export function Message({ message, onRetry, onSendMessage }: MessageProps) {
 
             return null;
           })}
-        </div>
       </div>
+    </div>
+  );
+}
+
+function StatItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between text-sm">
+      <span className="text-[#8e8ea0]">{label}</span>
+      <span className="text-[#ececec] font-medium">{value}</span>
     </div>
   );
 }

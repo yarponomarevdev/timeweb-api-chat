@@ -2,15 +2,17 @@
 
 import React, { useRef, useEffect } from "react";
 import { ArrowUp } from "lucide-react";
+import { ActionsMenu } from "./actions-menu";
 
 interface ChatInputProps {
   input: string;
   isLoading: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
+  onAction?: (text: string) => void;
 }
 
-export function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInputProps) {
+export function ChatInput({ input, isLoading, onInputChange, onSubmit, onAction }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -38,6 +40,7 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInp
       onSubmit={onSubmit}
       className="relative flex items-end w-full max-w-3xl mx-auto bg-[#2f2f2f] border border-[#3a3a3a] rounded-2xl p-2 shadow-lg"
     >
+      {onAction && <ActionsMenu onAction={onAction} disabled={isLoading} />}
       <textarea
         ref={textareaRef}
         value={input}

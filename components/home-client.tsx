@@ -14,27 +14,44 @@ export default function HomeClient() {
   const [openaiKey, setOpenaiKey] = useState<string>(
     () => localStorage.getItem(OPENAI_KEY) ?? ""
   );
+  // Показывать форму ключей поверх чата (без сброса ключей)
+  const [showKeySetup, setShowKeySetup] = useState(false);
 
   const handleSave = (tw: string, oai: string) => {
     localStorage.setItem(TIMEWEB_KEY, tw);
     localStorage.setItem(OPENAI_KEY, oai);
     setTimewebToken(tw);
     setOpenaiKey(oai);
+    setShowKeySetup(false);
   };
 
   const handleChangeToken = () => {
-    localStorage.removeItem(TIMEWEB_KEY);
-    localStorage.removeItem(OPENAI_KEY);
-    setTimewebToken("");
-    setOpenaiKey("");
+    setShowKeySetup(true);
   };
 
+  const handleCancel = () => {
+    setShowKeySetup(false);
+  };
+
+  // Нет ключей — обязательный онбординг
   if (!timewebToken || !openaiKey) {
     return (
       <ApiKeySetup
         initialTimewebKey={timewebToken}
         initialOpenaiKey={openaiKey}
         onSave={handleSave}
+      />
+    );
+  }
+
+  // Есть ключи, но пользователь хочет их поменять
+  if (showKeySetup) {
+    return (
+      <ApiKeySetup
+        initialTimewebKey={timewebToken}
+        initialOpenaiKey={openaiKey}
+        onSave={handleSave}
+        onCancel={handleCancel}
       />
     );
   }

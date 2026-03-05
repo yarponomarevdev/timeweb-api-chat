@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Server, Cpu, HardDrive, Zap } from "lucide-react";
-import type { ProposeServerOutput, OsOption } from "@/lib/tools";
+import type { ProposeServerOutput, OsOption, PresetSummary } from "@/lib/tools";
 
 interface ServerCreateFormProps {
   data: ProposeServerOutput;
@@ -11,21 +11,47 @@ interface ServerCreateFormProps {
 
 export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   const [selectedOs, setSelectedOs] = useState<OsOption>(data.selected_os);
-  const { preset, server_name, available_os } = data;
+  const [selectedPreset, setSelectedPreset] = useState<PresetSummary>(data.preset);
+  const [isCreating, setIsCreating] = useState(false);
+  const { server_name, available_os, available_presets } = data;
 
   const diskLabel =
-    preset.disk_gb >= 1000
-      ? `${Math.round(preset.disk_gb / 1024)} TB`
-      : `${preset.disk_gb} GB`;
+    selectedPreset.disk_gb >= 1000
+      ? `${Math.round(selectedPreset.disk_gb / 1024)} TB`
+      : `${selectedPreset.disk_gb} GB`;
 
   const handleCreate = () => {
+    if (isCreating) return;
+    setIsCreating(true);
     onConfirm(
-      `Подтверждаю. Создай сервер: name="${server_name}", os_id=${selectedOs.id}, preset_id=${preset.id}`
+      `Подтверждаю. Создай сервер: name="${server_name}", os_id=${selectedOs.id}, preset_id=${selectedPreset.id}`
     );
   };
 
   return (
     <div className="my-2 flex flex-col gap-3 max-w-sm">
+      {/* Выбор тарифа (RAM) */}
+      {available_presets && available_presets.length > 1 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="text-xs text-[#8e8ea0]">Тариф (RAM):</div>
+          <div className="flex flex-wrap gap-2">
+            {available_presets.map((p) => (
+              <button
+                key={p.id}
+                onClick={() => setSelectedPreset(p)}
+                className={`border rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer ${
+                  selectedPreset.id === p.id
+                    ? "bg-[#10a37f] border-[#10a37f] text-white"
+                    : "bg-[#2f2f2f] border-[#3a3a3a] text-[#ececec] hover:border-[#10a37f]"
+                }`}
+              >
+                {p.ram_gb} GB
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Выбор ОС */}
       {available_os.length > 1 && (
         <div className="flex flex-col gap-1.5">
@@ -64,14 +90,14 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
           </div>
           <div className="flex justify-between">
             <span className="text-[#8e8ea0]">Тариф</span>
-            <span className="text-[#ececec] font-medium">{preset.description}</span>
+            <span className="text-[#ececec] font-medium">{selectedPreset.description}</span>
           </div>
           <div className="flex items-center gap-4 text-xs text-[#8e8ea0] mt-1">
             <span className="flex items-center gap-1">
-              <Cpu size={11} /> {preset.cpu} CPU
+              <Cpu size={11} /> {selectedPreset.cpu} CPU
             </span>
             <span className="flex items-center gap-1">
-              <Zap size={11} /> {preset.ram_gb} GB RAM
+              <Zap size={11} /> {selectedPreset.ram_gb} GB RAM
             </span>
             <span className="flex items-center gap-1">
               <HardDrive size={11} /> {diskLabel}
@@ -80,7 +106,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
           <div className="flex justify-between mt-1">
             <span className="text-[#8e8ea0]">Стоимость</span>
             <span className="text-[#10a37f] font-semibold">
-              {preset.price_per_month} ₽/мес
+              {selectedPreset.price_per_month} ₽/мес
             </span>
           </div>
         </div>
@@ -89,9 +115,10 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
       {/* Кнопка создания */}
       <button
         onClick={handleCreate}
-        className="w-full bg-[#10a37f] hover:bg-[#0d8f6f] text-white font-medium py-2.5 px-4 rounded-xl transition-colors text-sm"
+        disabled={isCreating}
+        className="w-full bg-[#10a37f] hover:bg-[#0d8f6f] disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-xl transition-colors text-sm"
       >
-        Создать сервер
+        {isCreating ? "Создаётся..." : "Создать сервер"}
       </button>
     </div>
   );
