@@ -84,7 +84,7 @@ export function ToolCallLog({ messages }: ToolCallLogProps) {
         <div className="flex items-center gap-2">
           <Wrench size={12} />
           <span>
-            Вызовы инструментов · {calls.length}
+            Выполненные действия · {calls.length}
             {pendingCount > 0 && (
               <span className="ml-1.5 text-[#10a37f] animate-pulse">
                 {pendingCount} выполняется
@@ -106,7 +106,6 @@ export function ToolCallLog({ messages }: ToolCallLogProps) {
               >
                 <StatusIcon state={call.state} />
                 <span className="flex-1 text-[#c0c0c8]">{call.label}</span>
-                <span className="text-[#555] font-mono">{call.toolName}</span>
                 {expandedId === call.id ? (
                   <ChevronDown size={10} className="text-[#555] flex-shrink-0" />
                 ) : (

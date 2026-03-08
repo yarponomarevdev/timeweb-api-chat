@@ -16,7 +16,7 @@ export function Sidebar({ onNewChat, onQuickAction, onClose, onChangeToken }: Si
       <div className="flex items-center justify-between px-2 py-3 mb-4">
         <div className="flex items-center gap-2">
           <Server className="text-[#10a37f]" size={24} />
-          <span className="font-bold text-lg">Timeweb Manager</span>
+          <span className="font-bold text-lg">evolvin.cloud</span>
         </div>
         {onClose && (
           <button

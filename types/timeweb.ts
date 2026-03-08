@@ -115,7 +115,7 @@ export interface TimewebCreateServerParams {
   };
 }
 
-export type ServerAction = "start" | "shutdown" | "reboot" | "reset_password" | "reinstall";
+export type ServerAction = "start" | "shutdown" | "reboot" | "hard-reboot" | "reset_password" | "reinstall";
 
 export interface TimewebSSHKey {
   id: number;
@@ -159,4 +159,39 @@ export interface TimewebServerStats {
   network_traffic: Array<{ x: string; y_in: number; y_out: number }>;
   disk: Array<{ x: string; y: number }>;
   ram: Array<{ x: string; y: number }>;
+}
+
+export interface TimewebDomain {
+  id: number;
+  name: string;
+  fqdn: string;
+  is_autoprolong: boolean;
+  is_premium: boolean;
+  expiration: string;
+  paid_till: string | null;
+  days_left: number;
+  provider: string;
+}
+
+export interface TimewebDatabase {
+  id: number;
+  name: string;
+  type: string;
+  status: string;
+  created_at: string;
+  disk: number;
+  comment: string;
+  preset_id: number;
+  location: string;
+}
+
+export interface TimewebBucket {
+  id: number;
+  name: string;
+  type: "private" | "public";
+  object_amount: number;
+  size: number;
+  location: string;
+  status: string;
+  created_at: string;
 }

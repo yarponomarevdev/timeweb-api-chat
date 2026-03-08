@@ -5,8 +5,8 @@ import "./globals.css";
 const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
-  title: "Timeweb Manager",
-  description: "Управление серверами Timeweb Cloud через AI-чат",
+  title: "evolvin.cloud",
+  description: "Управление серверами через AI-чат evolvin.cloud",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

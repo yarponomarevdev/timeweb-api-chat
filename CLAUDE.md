@@ -35,7 +35,7 @@ HomeClient → ApiKeySetup (первый запуск) → Chat → API route
 |------|-----------|
 | `app/api/chat/route.ts` | Единственный API endpoint. Принимает ключи из заголовков, передаёт их в tools через `toolContext`. Rate limiting (20 req/min). |
 | `lib/tools.ts` | 8 AI tools: `list_servers`, `get_server`, `create_server`, `delete_server`, `server_action`, `propose_server`, `list_presets`, `list_os`, `get_balance`. |
-| `lib/timeweb.ts` | REST клиент Timeweb API. Все методы получают `token` как параметр. |
+| `lib/timeweb.ts` | REST клиент evolvin.cloud API. Все методы получают `token` как параметр. |
 | `lib/rate-limit.ts` | In-memory sliding window лимитер. |
 | `components/home-client.tsx` | Управляет состоянием ключей, переключает между `ApiKeySetup` и `Chat`. |
 | `components/chat.tsx` | Основной чат: история в `localStorage`, scroll-lock, retry. |

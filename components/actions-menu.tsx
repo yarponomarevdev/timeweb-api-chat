@@ -10,6 +10,9 @@ import {
   HardDrive,
   BarChart2,
   Zap,
+  Globe,
+  Database,
+  Package,
   ChevronRight,
 } from "lucide-react";
 
@@ -83,10 +86,33 @@ const CATEGORIES: Category[] = [
     title: "Действия",
     actions: [
       { label: "Перезагрузить сервер", message: "Перезагрузи сервер" },
+      { label: "Жёсткая перезагрузка", message: "Жёсткая перезагрузка сервера" },
       { label: "Запустить сервер", message: "Запусти сервер" },
       { label: "Выключить сервер", message: "Выключи сервер" },
       { label: "Удалить сервер", message: "Удали сервер" },
       { label: "Сбросить пароль", message: "Сбрось пароль сервера" },
+    ],
+  },
+  {
+    icon: <Globe size={13} />,
+    title: "Домены",
+    actions: [
+      { label: "Список доменов", message: "Покажи мои домены" },
+    ],
+  },
+  {
+    icon: <Database size={13} />,
+    title: "Базы данных",
+    actions: [
+      { label: "Список баз данных", message: "Покажи мои базы данных" },
+      { label: "Создать базу данных", message: "Создай базу данных" },
+    ],
+  },
+  {
+    icon: <Package size={13} />,
+    title: "Хранилище",
+    actions: [
+      { label: "Список бакетов", message: "Покажи мои S3-бакеты" },
     ],
   },
 ];

@@ -1,6 +1,6 @@
-# Timeweb API Chat — Описание проекта
+# evolvin.cloud — Описание проекта
 
-AI-чат для управления облачными серверами Timeweb Cloud через естественный язык. Вместо веб-панели управления — просто пишешь что нужно сделать.
+AI-чат evolvin.cloud для управления облачными серверами через естественный язык. Вместо веб-панели управления — просто пишешь что нужно сделать.
 
 ---
 
@@ -41,12 +41,12 @@ components/
 
 lib/
 ├── tools.ts              — 9 AI-инструментов (Zod-схемы + обработчики)
-├── timeweb.ts            — клиент Timeweb Cloud REST API
+├── timeweb.ts            — клиент Cloud REST API
 ├── rate-limit.ts         — in-memory rate limiter
 └── utils.ts              — cn() хелпер для классов
 
 types/
-└── timeweb.ts            — TypeScript-интерфейсы для Timeweb API
+└── timeweb.ts            — TypeScript-интерфейсы для Cloud API
 ```
 
 ---
@@ -54,7 +54,7 @@ types/
 ## Переменные окружения
 
 ```env
-TIMEWEB_TOKEN=      # Bearer-токен Timeweb Cloud API (обязателен)
+TIMEWEB_TOKEN=      # Bearer-токен evolvin.cloud API (обязателен)
 OPENAI_API_KEY=     # API-ключ OpenAI (обязателен)
 OPENAI_MODEL=       # Модель, по умолчанию gpt-4o
 CHAT_MAX_STEPS=     # Макс. tool-шагов за запрос, по умолчанию 8
@@ -131,9 +131,9 @@ CHAT_MAX_STEPS=     # Макс. tool-шагов за запрос, по умол
 
 ---
 
-## Клиент Timeweb API (`lib/timeweb.ts`)
+## Клиент evolvin.cloud API (`lib/timeweb.ts`)
 
-Обёртка над Timeweb Cloud REST API v1. Все запросы авторизуются через `Bearer TIMEWEB_TOKEN`.
+Обёртка над evolvin.cloud REST API v1. Все запросы авторизуются через `Bearer TIMEWEB_TOKEN`.
 
 | Метод | Эндпоинт | Описание |
 |-------|---------|---------|

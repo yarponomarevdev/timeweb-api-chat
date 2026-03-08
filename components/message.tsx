@@ -82,11 +82,25 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
   delete_firewall: ["Показать группы безопасности", "Показать мои серверы"],
   delete_firewall_rule: ["Показать группы безопасности", "Добавить правило в группу безопасности"],
   attach_firewall_to_server: ["Показать группы безопасности", "Показать мои серверы"],
+
+  // Домены
+  list_domains: ["Показать базы данных", "Показать мои серверы", "Показать баланс"],
+
+  // Базы данных
+  list_databases: ["Создать базу данных", "Показать мои серверы", "Показать баланс"],
+  create_database: ["Показать базы данных", "Показать мои серверы"],
+
+  // Хранилище
+  list_buckets: ["Показать мои серверы", "Показать баланс"],
+
+  // Жёсткая перезагрузка
+  reboot_server_hard: ["Показать мои серверы", "Показать статистику сервера"],
 };
 
 const RICH_TOOL_OUTPUTS = new Set([
   "list_servers",
   "get_server",
+  "propose_server",
   "list_presets",
   "list_os",
   "list_ssh_keys",
@@ -163,7 +177,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
 
   return (
     <div className="mb-6">
-      <div className="text-xs font-medium text-[#10a37f] mb-2 uppercase tracking-wide">Timeweb</div>
+      <div className="text-xs font-medium text-[#10a37f] mb-2 uppercase tracking-wide">evolvin.cloud</div>
       <div className="flex flex-col gap-2">
         {message.parts?.map((part, index) => {
           if (isTextUIPart(part)) {
@@ -514,6 +528,69 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                   const output = part.output as { success: boolean; message: string } | AttachFirewallOutput;
                   return (
                     <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+                      {output.message}
+                    </div>
+                  );
+                }
+
+                if (toolName === "list_domains") {
+                  const output = part.output as { domains: Array<{ id: number; name: string; expiration: string; days_left: number; provider: string; is_autoprolong: boolean }> };
+                  return (
+                    <div key={index} className="my-2 flex flex-col gap-2">
+                      {output.domains.length === 0 && <p className="text-[#8e8ea0] text-sm">Доменов не найдено</p>}
+                      {output.domains.map((d) => (
+                        <div key={d.id} className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] px-4 py-3 flex items-center justify-between text-sm">
+                          <span className="font-medium text-[#ececec]">{d.name}</span>
+                          <span className={`text-xs px-2 py-1 rounded-md ${d.days_left > 30 ? "text-green-400 bg-green-900/20" : d.days_left > 7 ? "text-yellow-400 bg-yellow-900/20" : "text-red-400 bg-red-900/20"}`}>
+                            {d.days_left} дн.
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+
+                if (toolName === "list_databases" || toolName === "create_database") {
+                  const output = part.output as { databases?: Array<{ id: number; name: string; type: string; status: string; location?: string }>; database?: { id: number; name: string; type: string; status: string } };
+                  const items = output.databases ?? (output.database ? [output.database] : []);
+                  return (
+                    <div key={index} className="my-2 flex flex-col gap-2">
+                      {items.length === 0 && <p className="text-[#8e8ea0] text-sm">Баз данных не найдено</p>}
+                      {items.map((d) => (
+                        <div key={d.id} className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] px-4 py-3 flex items-center justify-between text-sm">
+                          <div>
+                            <span className="font-medium text-[#ececec]">{d.name}</span>
+                            <span className="ml-2 text-[#8e8ea0] text-xs">{d.type.toUpperCase()}</span>
+                          </div>
+                          <span className="text-xs text-[#8e8ea0]">{d.status}</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+
+                if (toolName === "list_buckets") {
+                  const output = part.output as { buckets: Array<{ id: number; name: string; type: string; object_amount: number; size_gb: number; location?: string }> };
+                  return (
+                    <div key={index} className="my-2 flex flex-col gap-2">
+                      {output.buckets.length === 0 && <p className="text-[#8e8ea0] text-sm">Бакетов не найдено</p>}
+                      {output.buckets.map((b) => (
+                        <div key={b.id} className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] px-4 py-3 flex items-center justify-between text-sm">
+                          <div>
+                            <span className="font-medium text-[#ececec]">{b.name}</span>
+                            <span className="ml-2 text-[#8e8ea0] text-xs">{b.type === "public" ? "Публичный" : "Приватный"}</span>
+                          </div>
+                          <span className="text-xs text-[#8e8ea0]">{b.object_amount} объектов · {b.size_gb} ГБ</span>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                }
+
+                if (toolName === "reboot_server_hard") {
+                  const output = part.output as { success: boolean; message: string };
+                  return (
+                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
                       {output.message}
                     </div>
                   );

@@ -28,7 +28,7 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
 
   // Предупреждения о формате (не блокируют отправку)
   const timewebWarning = timewebKey && !timewebKey.startsWith("eyJ")
-    ? "Timeweb токен обычно начинается с eyJ (JWT)"
+    ? "Токен evolvin.cloud обычно начинается с eyJ (JWT)"
     : null;
   const openaiWarning = openaiKey && !openaiKey.startsWith("sk-")
     ? "OpenAI ключ обычно начинается с sk-"
@@ -51,17 +51,17 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
           <div className="w-12 h-12 bg-[#10a37f]/10 ring-1 ring-[#10a37f]/25 rounded-2xl flex items-center justify-center mb-4">
             <Server size={24} className="text-[#10a37f]" />
           </div>
-          <h1 className="text-xl font-bold text-[#ececec]">Timeweb Manager</h1>
+          <h1 className="text-xl font-bold text-[#ececec]">evolvin.cloud</h1>
           <p className="text-[#5a5a6a] text-sm mt-1">{onCancel ? "Изменить API-ключи" : "Настройка подключения"}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
 
-          {/* Timeweb API */}
+          {/* evolvin.cloud API */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <label className="text-xs font-medium text-[#8e8ea0] uppercase tracking-wider">
-                Timeweb API
+                evolvin.cloud API
               </label>
               <a
                 href="https://timeweb.cloud/my/api-keys"
@@ -157,7 +157,7 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
         <div className="mt-5 p-4 rounded-xl border border-[#262626] bg-[#1a1a1a]">
           <div className="flex items-center gap-2 mb-1">
             <Sparkles size={12} className="text-[#10a37f]" />
-            <span className="text-xs font-semibold text-[#ececec]">Нет аккаунта Timeweb?</span>
+            <span className="text-xs font-semibold text-[#ececec]">Нет аккаунта evolvin.cloud?</span>
           </div>
           <p className="text-xs text-[#4a4a5a] leading-relaxed mb-2.5">
             Зарегистрируйтесь по ссылке и получите x2 на первое пополнение.
@@ -168,7 +168,7 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-xs text-[#10a37f] hover:text-[#0e9572] font-medium transition-colors"
           >
-            Зарегистрироваться в Timeweb
+            Зарегистрироваться в evolvin.cloud
             <ExternalLink size={10} />
           </a>
         </div>

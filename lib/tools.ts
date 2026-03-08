@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import * as tw from "./timeweb";
-import type { TimewebServer } from "@/types/timeweb";
+import type { TimewebServer, TimewebDomain, TimewebDatabase, TimewebBucket } from "@/types/timeweb";
 
 export interface ServerSummary {
   id: number;
@@ -256,7 +256,7 @@ export function createTools(token: string) {
         if (server.status === "no_paid") {
           return {
             error: true,
-            message: "Недостаточно средств на балансе для создания сервера. Пополните баланс в панели управления Timeweb Cloud.",
+            message: "Недостаточно средств на балансе для создания сервера. Пополните баланс в панели управления evolvin.cloud.",
           };
         }
 
@@ -367,14 +367,14 @@ export function createTools(token: string) {
         );
         const defaultOs = sortedPool[0];
 
-        // Уникальные тарифы по RAM для выбора в форме (берём cheapest на каждый RAM)
-        const presetsByRam = new Map<number, typeof preset>();
+        // Уникальные тарифы по (RAM, disk) — показываем все комбинации для выбора
+        const presetsByRamDisk = new Map<string, typeof preset>();
         for (const p of presets.sort((a, b) => a.price - b.price)) {
-          if (!presetsByRam.has(p.ram)) presetsByRam.set(p.ram, p);
+          const key = `${p.ram}_${p.disk}`;
+          if (!presetsByRamDisk.has(key)) presetsByRamDisk.set(key, p);
         }
-        const availablePresets = Array.from(presetsByRam.values())
-          .sort((a, b) => a.ram - b.ram)
-          .slice(0, 6)
+        const availablePresets = Array.from(presetsByRamDisk.values())
+          .sort((a, b) => a.ram - b.ram || a.disk - b.disk)
           .map((p) => ({
             id: p.id,
             description: p.description_short || p.description,
@@ -487,7 +487,7 @@ export function createTools(token: string) {
     // ─── SSH-ключи ──────────────────────────────────────────────────────────
 
     list_ssh_keys: tool({
-      description: "Показать список SSH-ключей в аккаунте Timeweb",
+      description: "Показать список SSH-ключей в аккаунте evolvin.cloud",
       inputSchema: z.object({}),
       execute: async () => {
         const keys = await tw.listSSHKeys(token);
@@ -502,7 +502,7 @@ export function createTools(token: string) {
     }),
 
     create_ssh_key: tool({
-      description: "Добавить SSH-ключ в аккаунт Timeweb",
+      description: "Добавить SSH-ключ в аккаунт evolvin.cloud",
       inputSchema: z.object({
         name: z.string().describe("Название ключа"),
         body: z.string().describe("Публичный ключ (содержимое файла .pub)"),
@@ -521,7 +521,7 @@ export function createTools(token: string) {
     }),
 
     delete_ssh_key: tool({
-      description: "Удалить SSH-ключ из аккаунта Timeweb по его ID",
+      description: "Удалить SSH-ключ из аккаунта evolvin.cloud по его ID",
       inputSchema: z
         .object({
           key_id: z.number().optional().describe("ID SSH-ключа"),
@@ -781,6 +781,85 @@ export function createTools(token: string) {
       execute: async ({ firewall_id, rule_id }) => {
         await tw.deleteFirewallRule(token, firewall_id, rule_id);
         return { success: true as const, message: `Правило ${rule_id} удалено` };
+      },
+    }),
+
+    list_domains: tool({
+      description: "Показать список доменов аккаунта",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const domains = await tw.listDomains(token);
+        return { domains: domains.map((d) => ({
+          id: d.id,
+          name: d.fqdn || d.name,
+          expiration: d.expiration,
+          days_left: d.days_left,
+          provider: d.provider,
+          is_autoprolong: d.is_autoprolong,
+        })) };
+      },
+    }),
+
+    list_databases: tool({
+      description: "Показать список баз данных аккаунта",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const dbs = await tw.listDatabases(token);
+        return { databases: dbs.map((d) => ({
+          id: d.id,
+          name: d.name,
+          type: d.type,
+          status: d.status,
+          location: d.location,
+          created_at: d.created_at,
+        })) };
+      },
+    }),
+
+    create_database: tool({
+      description: "Создать базу данных. Обязательно: имя, тип (mysql8, pgsql, redis), пароль. preset_id — из системы по умолчанию минимальный.",
+      inputSchema: z.object({
+        name: z.string().describe("Имя базы данных"),
+        type: z.string().describe("Тип БД: mysql8, pgsql, redis"),
+        password: z.string().describe("Пароль для доступа"),
+        preset_id: z.number().optional().describe("ID тарифа базы данных (необязательно)"),
+      }),
+      execute: async ({ name, type, password, preset_id }) => {
+        const db = await tw.createDatabase(token, {
+          name,
+          type,
+          password,
+          preset_id: preset_id ?? 1,
+        });
+        return { database: { id: db.id, name: db.name, type: db.type, status: db.status } };
+      },
+    }),
+
+    list_buckets: tool({
+      description: "Показать список S3-бакетов (объектное хранилище)",
+      inputSchema: z.object({}),
+      execute: async () => {
+        const buckets = await tw.listBuckets(token);
+        return { buckets: buckets.map((b) => ({
+          id: b.id,
+          name: b.name,
+          type: b.type,
+          object_amount: b.object_amount,
+          size_gb: Math.round(b.size / 1024 / 1024 / 1024 * 100) / 100,
+          location: b.location,
+          status: b.status,
+        })) };
+      },
+    }),
+
+    reboot_server_hard: tool({
+      description: "Жёсткая перезагрузка сервера (hard reboot). Использовать когда обычная перезагрузка не помогает.",
+      inputSchema: z.object({
+        server_id: z.number().describe("ID сервера"),
+      }),
+      execute: async ({ server_id }) => {
+        await tw.serverAction(token, server_id, "hard-reboot");
+        return { success: true, message: `Жёсткая перезагрузка сервера ${server_id} выполнена` };
       },
     }),
 

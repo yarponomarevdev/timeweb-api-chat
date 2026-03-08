@@ -10,6 +10,9 @@ import type {
   TimewebFirewallGroup,
   TimewebFirewallRule,
   TimewebServerStats,
+  TimewebDomain,
+  TimewebDatabase,
+  TimewebBucket,
 } from "@/types/timeweb";
 
 const BASE = "https://api.timeweb.cloud/api/v1";
@@ -50,12 +53,12 @@ async function apiRequest<T>(
 
     if (!res.ok) {
       if (RETRYABLE_STATUSES.has(res.status) && attempt < maxAttempts - 1) {
-        lastError = new Error(`Timeweb API error ${res.status}: ${res.statusText}`);
+        lastError = new Error(`evolvin.cloud API error ${res.status}: ${res.statusText}`);
         continue;
       }
       const error = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error(
-        `Timeweb API error ${res.status}: ${error.message || JSON.stringify(error)}`
+        `evolvin.cloud API error ${res.status}: ${error.message || JSON.stringify(error)}`
       );
     }
 
@@ -310,6 +313,32 @@ export function getServerDiskGB(server: TimewebServer): number {
     || 0;
   if (!raw) return 0;
   return raw > 1000 ? Math.round(raw / 1024) : raw;
+}
+
+export async function listDomains(token: string): Promise<TimewebDomain[]> {
+  const data = await apiRequest<{ domains: TimewebDomain[] }>("/domains", token);
+  return data.domains;
+}
+
+export async function listDatabases(token: string): Promise<TimewebDatabase[]> {
+  const data = await apiRequest<{ dbs: TimewebDatabase[] }>("/dbs", token);
+  return data.dbs;
+}
+
+export async function createDatabase(
+  token: string,
+  params: { name: string; type: string; preset_id: number; password: string }
+): Promise<TimewebDatabase> {
+  const data = await apiRequest<{ db: TimewebDatabase }>("/dbs", token, {
+    method: "POST",
+    body: JSON.stringify(params),
+  });
+  return data.db;
+}
+
+export async function listBuckets(token: string): Promise<TimewebBucket[]> {
+  const data = await apiRequest<{ buckets: TimewebBucket[] }>("/storages/buckets", token);
+  return data.buckets;
 }
 
 export function getStatusLabel(status: TimewebServer["status"]): string {

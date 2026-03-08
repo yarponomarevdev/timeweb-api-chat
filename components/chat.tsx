@@ -1,13 +1,19 @@
 "use client";
 
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart, type UIMessage } from "ai";
+import { DefaultChatTransport, isTextUIPart, isToolUIPart, getToolName, type UIMessage } from "ai";
 import { Server, Plus, Key } from "lucide-react";
 import { ChatInput } from "./chat-input";
 import { Message } from "./message";
 import { ToolCallLog } from "./tool-call-log";
 import { QuickActionsGrid } from "./quick-actions-grid";
+import { ServerNotificationToast, type ToastMessage } from "./server-notification-toast";
+import { useServerMonitor } from "@/hooks/use-server-monitor";
+import { QuickViewPanel } from "./quick-view-panel";
+import { ServerCard } from "./server-card";
+import { useTimeweb } from "@/hooks/use-timeweb";
+import { LayoutGrid } from "lucide-react";
 
 const STORAGE_KEY = "chat_messages";
 
@@ -53,23 +59,77 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
       if (retryMatch) setRetryAfter(Number(retryMatch[1]));
 
       if (msg.includes("429") || msg.toLowerCase().includes("too many requests")) {
-        setErrorMsg("Слишком много запросов. Подождите минуту.");
+        setErrorMsg("Слишком много запросов к ИИ — подождите немного и попробуйте снова.");
       } else if (msg.includes("401") || msg.toLowerCase().includes("incorrect api key")) {
-        setErrorMsg("Неверный ключ OpenAI. Проверьте настройки.");
-      } else if (msg.toLowerCase().includes("timeweb api error 401")) {
-        setErrorMsg("Неверный токен Timeweb. Обновите ключи.");
+        setErrorMsg("Ключ OpenAI недействителен. Нажмите «Изменить API-ключ» и введите правильный ключ.");
+      } else if (msg.toLowerCase().includes("timeweb api error 401") || msg.toLowerCase().includes("evolvin.cloud api error 401")) {
+        setErrorMsg("Токен evolvin.cloud недействителен. Нажмите «Изменить API-ключ» и введите актуальный токен.");
       } else if (msg.toLowerCase().includes("402") || msg.toLowerCase().includes("insufficient")) {
-        setErrorMsg("Недостаточно средств на балансе Timeweb.");
+        setErrorMsg("Недостаточно средств на балансе evolvin.cloud. Пополните счёт в личном кабинете.");
       } else if (msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror")) {
-        setErrorMsg("Нет соединения. Проверьте интернет.");
+        setErrorMsg("Нет подключения к интернету. Проверьте соединение и попробуйте ещё раз.");
       } else {
-        setErrorMsg("Не удалось получить ответ. Проверьте ключи API и попробуйте ещё раз.");
+        setErrorMsg("Что-то пошло не так. Попробуйте повторить запрос или проверьте настройки ключей.");
       }
     },
   });
 
   const isLoading = status === "streaming" || status === "submitted";
   const [input, setInput] = React.useState("");
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const [showServersPanel, setShowServersPanel] = useState(false);
+  const [showPresetsPanel, setShowPresetsPanel] = useState(false);
+
+  const {
+    servers: cachedServers,
+    presets: cachedPresets,
+    serversLoading,
+    presetsLoading,
+    serversError,
+    presetsError,
+    fetchServers,
+    fetchPresets,
+  } = useTimeweb(timewebToken);
+
+  // Извлекаем серверы из результатов tool-вызовов для глобального мониторинга
+  const monitoredServers = React.useMemo(() => {
+    const serverMap = new Map<number, { id: number; name: string; status: string }>();
+    for (const msg of messages) {
+      for (const part of msg.parts ?? []) {
+        if (!isToolUIPart(part) || part.state !== "output-available") continue;
+        const toolName = getToolName(part);
+        if (toolName !== "list_servers" && toolName !== "get_server") continue;
+        const output = (part as { output?: unknown }).output;
+        if (!output || typeof output !== "object") continue;
+        const servers = Array.isArray(output)
+          ? output
+          : (output as { servers?: unknown[] }).servers ?? [(output as { server?: unknown }).server].filter(Boolean);
+        for (const s of servers) {
+          if (s && typeof s === "object" && "id" in s) {
+            const srv = s as { id: number; name: string; status: string };
+            serverMap.set(srv.id, { id: srv.id, name: srv.name, status: srv.status });
+          }
+        }
+      }
+    }
+    return Array.from(serverMap.values());
+  }, [messages]);
+
+  const handleStatusChange = useCallback(
+    (serverId: number, serverName: string, newStatus: string, newLabel: string) => {
+      setToasts((prev) => [
+        ...prev,
+        { id: `${serverId}-${Date.now()}`, serverName, status: newStatus, statusLabel: newLabel, timestamp: Date.now() },
+      ]);
+    },
+    []
+  );
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((t) => t.id !== id));
+  }, []);
+
+  useServerMonitor(monitoredServers, timewebToken, handleStatusChange);
 
   // Таймаут 60 секунд — если AI завис, показываем ошибку
   React.useEffect(() => {
@@ -172,9 +232,23 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
             <div className="w-7 h-7 bg-[#10a37f]/15 rounded-lg flex items-center justify-center">
               <Server size={15} className="text-[#10a37f]" />
             </div>
-            <span className="font-semibold text-sm text-[#ececec]">Timeweb Manager</span>
+            <span className="font-semibold text-sm text-[#ececec]">evolvin.cloud</span>
           </div>
           <div className="flex items-center gap-1">
+            <button
+              onClick={() => { fetchServers(); setShowServersPanel(true); }}
+              className="p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+              title="Мои серверы"
+            >
+              <Server size={15} />
+            </button>
+            <button
+              onClick={() => { fetchPresets(); setShowPresetsPanel(true); }}
+              className="p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+              title="Тарифы"
+            >
+              <LayoutGrid size={15} />
+            </button>
             <button
               onClick={handleNewChat}
               className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-3 py-1.5 rounded-lg transition-colors"
@@ -201,9 +275,9 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
             <div className="w-14 h-14 bg-[#10a37f]/10 rounded-2xl flex items-center justify-center mb-5 ring-1 ring-[#10a37f]/20">
               <Server size={28} className="text-[#10a37f]" />
             </div>
-            <h1 className="text-2xl font-bold text-[#ececec] mb-2 text-center">Timeweb Manager</h1>
+            <h1 className="text-2xl font-bold text-[#ececec] mb-2 text-center">evolvin.cloud</h1>
             <p className="text-[#8e8ea0] text-sm max-w-xs leading-relaxed mb-8 text-center">
-              Управляй серверами Timeweb через естественный язык
+              Управляй серверами evolvin.cloud через естественный язык
             </p>
             <QuickActionsGrid onAction={handleQuickAction} />
             <button
@@ -284,6 +358,65 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
           AI может допускать ошибки. Проверяйте важную информацию.
         </p>
       </div>
+
+      {/* Уведомления о состоянии серверов */}
+      <ServerNotificationToast toasts={toasts} onDismiss={dismissToast} />
+
+      {/* Панель серверов */}
+      <QuickViewPanel
+        title="Мои серверы"
+        isOpen={showServersPanel}
+        onClose={() => setShowServersPanel(false)}
+        onRefresh={() => fetchServers(true)}
+        isLoading={serversLoading}
+        error={serversError}
+      >
+        {cachedServers && cachedServers.length === 0 && (
+          <p className="text-[#8e8ea0] text-sm text-center py-8">Серверов нет</p>
+        )}
+        {cachedServers?.map((s) => (
+          <ServerCard
+            key={s.id}
+            server={s}
+            onAction={(text) => { handleQuickAction(text); setShowServersPanel(false); }}
+            timewebToken={timewebToken}
+          />
+        ))}
+      </QuickViewPanel>
+
+      {/* Панель тарифов */}
+      <QuickViewPanel
+        title="Тарифы"
+        isOpen={showPresetsPanel}
+        onClose={() => setShowPresetsPanel(false)}
+        onRefresh={() => fetchPresets(true)}
+        isLoading={presetsLoading}
+        error={presetsError}
+      >
+        {cachedPresets && (
+          <div className="flex flex-col gap-2">
+            {cachedPresets.map((p) => (
+              <div key={p.id} className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] p-3 flex items-center justify-between gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-medium text-[#ececec]">{p.description}</span>
+                  <span className="text-xs text-[#8e8ea0]">
+                    {p.cpu} CPU · {p.ram_gb} ГБ RAM · {p.disk_gb} ГБ
+                  </span>
+                </div>
+                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className="text-sm font-semibold text-[#10a37f]">{p.price_per_month} ₽/мес</span>
+                  <button
+                    onClick={() => { handleQuickAction(`Создай сервер с тарифом ${p.ram_gb} ГБ RAM и ${p.disk_gb} ГБ диском`); setShowPresetsPanel(false); }}
+                    className="text-xs text-[#8e8ea0] hover:text-[#10a37f] transition-colors"
+                  >
+                    Выбрать →
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </QuickViewPanel>
     </div>
   );
 }

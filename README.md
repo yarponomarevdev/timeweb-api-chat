@@ -1,13 +1,13 @@
-# Timeweb API Chat
+# evolvin.cloud
 
-Чат-интерфейс для управления облачными серверами [Timeweb Cloud](https://timeweb.cloud) через AI-ассистента. Вместо кликов по панели управления — просто пишете в чат: «создай сервер Ubuntu 22.04 на 2 ГБ RAM» или «покажи список серверов».
+Чат-интерфейс evolvin.cloud для управления облачными серверами через AI-ассистента. Вместо кликов по панели управления — просто пишете в чат: «создай сервер Ubuntu 22.04 на 2 ГБ RAM» или «покажи список серверов».
 
 ## Стек
 
 - **Next.js 16** (App Router) + **TypeScript**
 - **AI SDK v6** (`ai`, `@ai-sdk/openai`, `@ai-sdk/react`) — стриминг ответов и tool calls
 - **Tailwind CSS v4** + **shadcn/ui** — интерфейс
-- **Timeweb Cloud API** — управление серверами
+- **Cloud API** — управление серверами
 
 ## Возможности
 
@@ -26,8 +26,8 @@
 
 ```bash
 # 1. Клонировать репозиторий
-git clone https://github.com/your-username/timeweb-api-chat.git
-cd timeweb-api-chat
+git clone https://github.com/your-username/evolvin.cloud.git
+cd evolvin.cloud
 
 # 2. Установить зависимости
 npm install
@@ -45,7 +45,7 @@ npm run dev
 ## Переменные окружения
 
 ```env
-TIMEWEB_TOKEN=        # API-токен Timeweb Cloud (панель → API → Токены)
+TIMEWEB_TOKEN=        # API-токен evolvin.cloud (панель → API → Токены)
 OPENAI_API_KEY=       # OpenAI API Key
 ```
 
@@ -63,7 +63,7 @@ components/
   server-create-form.tsx  # Форма создания сервера
   sidebar.tsx         # Боковая панель
 lib/
-  timeweb.ts          # Клиент Timeweb Cloud API
+  timeweb.ts          # Клиент Cloud API
   tools.ts            # AI SDK tools (8 инструментов)
   utils.ts            # Утилиты
 ```

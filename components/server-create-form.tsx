@@ -20,6 +20,41 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
       ? `${Math.round(selectedPreset.disk_gb / 1024)} TB`
       : `${selectedPreset.disk_gb} GB`;
 
+  // Уникальные уровни RAM из списка пресетов
+  const uniqueRamLevels = [...new Set(available_presets.map((p) => p.ram_gb))].sort((a, b) => a - b);
+
+  // Все уникальные размеры диска из доступных пресетов
+  const uniqueDiskLevels = available_presets
+    .map((p) => p.disk_gb)
+    .filter((d, i, arr) => arr.indexOf(d) === i)
+    .sort((a, b) => a - b);
+
+  const handleRamSelect = (ramGb: number) => {
+    const presetsForRam = available_presets
+      .filter((p) => p.ram_gb === ramGb)
+      .sort((a, b) => a.price_per_month - b.price_per_month);
+    const sameDiskPreset = presetsForRam.find((p) => p.disk_gb === selectedPreset.disk_gb);
+    if (sameDiskPreset) {
+      setSelectedPreset(sameDiskPreset);
+      return;
+    }
+    if (presetsForRam[0]) setSelectedPreset(presetsForRam[0]);
+  };
+
+  const handleDiskSelect = (diskGb: number) => {
+    const presetsForDisk = available_presets
+      .filter((p) => p.disk_gb === diskGb)
+      .sort((a, b) => a.price_per_month - b.price_per_month);
+
+    const sameRamPreset = presetsForDisk.find((p) => p.ram_gb === selectedPreset.ram_gb);
+    if (sameRamPreset) {
+      setSelectedPreset(sameRamPreset);
+      return;
+    }
+
+    if (presetsForDisk[0]) setSelectedPreset(presetsForDisk[0]);
+  };
+
   const handleCreate = () => {
     if (isCreating) return;
     setIsCreating(true);
@@ -30,22 +65,44 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
 
   return (
     <div className="my-2 flex flex-col gap-3 max-w-sm">
-      {/* Выбор тарифа (RAM) */}
-      {available_presets && available_presets.length > 1 && (
+      {/* Выбор RAM */}
+      {uniqueRamLevels.length > 1 && (
         <div className="flex flex-col gap-1.5">
-          <div className="text-xs text-[#8e8ea0]">Тариф (RAM):</div>
+          <div className="text-xs text-[#8e8ea0]">Оперативная память:</div>
           <div className="flex flex-wrap gap-2">
-            {available_presets.map((p) => (
+            {uniqueRamLevels.map((ram) => (
               <button
-                key={p.id}
-                onClick={() => setSelectedPreset(p)}
+                key={ram}
+                onClick={() => handleRamSelect(ram)}
                 className={`border rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer ${
-                  selectedPreset.id === p.id
+                  selectedPreset.ram_gb === ram
                     ? "bg-[#10a37f] border-[#10a37f] text-white"
                     : "bg-[#2f2f2f] border-[#3a3a3a] text-[#ececec] hover:border-[#10a37f]"
                 }`}
               >
-                {p.ram_gb} GB
+                {ram} ГБ
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Выбор диска */}
+      {uniqueDiskLevels.length > 1 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="text-xs text-[#8e8ea0]">Размер диска:</div>
+          <div className="flex flex-wrap gap-2">
+            {uniqueDiskLevels.map((disk) => (
+              <button
+                key={disk}
+                onClick={() => handleDiskSelect(disk)}
+                className={`border rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer ${
+                  selectedPreset.disk_gb === disk
+                    ? "bg-[#10a37f] border-[#10a37f] text-white"
+                    : "bg-[#2f2f2f] border-[#3a3a3a] text-[#ececec] hover:border-[#10a37f]"
+                }`}
+              >
+                {disk >= 1000 ? `${Math.round(disk / 1024)} ТБ` : `${disk} ГБ`}
               </button>
             ))}
           </div>
