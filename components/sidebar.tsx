@@ -46,7 +46,7 @@ export function Sidebar({ onNewChat, onQuickAction, onClose, onChangeToken }: Si
           { icon: List, label: "Показать все серверы", action: "Покажи все мои серверы" },
           { icon: CreditCard, label: "Мой баланс", action: "Какой у меня баланс?" },
           { icon: Box, label: "Список тарифов", action: "Какие есть тарифы?" },
-          { icon: Cpu, label: "Создать сервер", action: "Создай сервер Ubuntu 2GB" },
+          { icon: Cpu, label: "Создать сервер", action: "Создай сервер" },
         ].map(({ icon: Icon, label, action }) => (
           <button
             key={action}

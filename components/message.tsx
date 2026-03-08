@@ -38,11 +38,65 @@ interface MessageProps {
   onRetry?: () => void;
   onSendMessage?: (text: string) => void;
   timewebToken?: string;
+  showSuggestions?: boolean;
 }
 
 type PresetRow = PresetSummary & { description: string };
 
-export function Message({ message, onRetry, onSendMessage, timewebToken }: MessageProps) {
+const TOOL_SUGGESTIONS: Record<string, string[]> = {
+  // Серверы
+  list_servers: ["Создать сервер", "Показать баланс", "Показать тарифы"],
+  get_server: ["Перезагрузить сервер", "Выключить сервер", "Показать статистику сервера", "Создать бэкап сервера", "Изменить конфигурацию сервера"],
+  create_server: ["Показать мои серверы", "Перезагрузить сервер", "Создать бэкап сервера", "Показать баланс"],
+  delete_server: ["Показать мои серверы", "Показать баланс"],
+
+  // Действия над сервером
+  server_action: ["Показать сервер", "Показать мои серверы", "Показать статистику сервера"],
+  resize_server: ["Показать сервер", "Показать статистику сервера", "Показать мои серверы"],
+
+  // Тарифы, ОС и предложение (флоу создания)
+  list_presets: ["Создай сервер", "Создать сервер на 4GB RAM", "Покажи список ОС"],
+  list_os: ["Создать сервер", "Показать тарифы"],
+  propose_server: ["Покажи другие тарифы", "Покажи список ОС", "Показать мои серверы"],
+
+  // Баланс
+  get_balance: ["Создать сервер", "Показать мои серверы", "Показать тарифы"],
+
+  // SSH-ключи
+  list_ssh_keys: ["Добавить SSH-ключ", "Удалить SSH-ключ", "Создать сервер"],
+  create_ssh_key: ["Показать SSH-ключи", "Создать сервер"],
+  delete_ssh_key: ["Показать SSH-ключи", "Создать сервер"],
+
+  // Бэкапы
+  list_backups: ["Создать бэкап сервера", "Восстановить сервер из бэкапа", "Показать мои серверы"],
+  create_backup: ["Показать бэкапы сервера", "Показать мои серверы"],
+  restore_backup: ["Показать мои серверы", "Показать бэкапы сервера"],
+
+  // Статистика
+  get_server_stats: ["Показать сервер", "Создать бэкап сервера", "Перезагрузить сервер"],
+
+  // Группы безопасности
+  list_firewalls: ["Создать группу безопасности", "Добавить правило в группу безопасности", "Привязать группу безопасности к серверу"],
+  create_firewall: ["Добавить правило в группу безопасности", "Привязать группу безопасности к серверу", "Показать группы безопасности"],
+  add_firewall_rule: ["Добавить ещё правило", "Привязать группу безопасности к серверу", "Показать группы безопасности"],
+  delete_firewall: ["Показать группы безопасности", "Показать мои серверы"],
+  delete_firewall_rule: ["Показать группы безопасности", "Добавить правило в группу безопасности"],
+  attach_firewall_to_server: ["Показать группы безопасности", "Показать мои серверы"],
+};
+
+const RICH_TOOL_OUTPUTS = new Set([
+  "list_servers",
+  "get_server",
+  "list_presets",
+  "list_os",
+  "list_ssh_keys",
+  "list_backups",
+  "list_firewalls",
+  "get_balance",
+  "get_server_stats",
+]);
+
+export function Message({ message, onRetry, onSendMessage, timewebToken, showSuggestions = true }: MessageProps) {
   const isUser = message.role === "user";
 
   if (isUser) {
@@ -81,12 +135,39 @@ export function Message({ message, onRetry, onSendMessage, timewebToken }: Messa
   );
   if (!hasContent) return null;
 
+  const completedToolNames = message.parts
+    ?.filter((p) => isToolUIPart(p) && p.state === "output-available")
+    .map((p) => getToolName(p)) ?? [];
+  const lastToolName = completedToolNames[completedToolNames.length - 1];
+  const hasRichToolOutput = completedToolNames.some((toolName) => RICH_TOOL_OUTPUTS.has(toolName));
+
+  let suggestions: string[] | undefined = lastToolName ? TOOL_SUGGESTIONS[lastToolName] : undefined;
+
+  // Для текстовых ответов без tool-вызовов — подсказки по ключевым словам
+  if (!suggestions && completedToolNames.length === 0) {
+    const fullText = (message.parts ?? [])
+      .filter(isTextUIPart)
+      .map((p) => p.text)
+      .join(" ")
+      .toLowerCase();
+    if (fullText.includes("сервер") && (fullText.includes("назов") || fullText.includes("имя") || fullText.includes("ос ") || fullText.includes("операционн") || fullText.includes("конфигурац") || fullText.includes("тариф"))) {
+      suggestions = ["Ubuntu 22.04, 2GB RAM, назови web-server", "Покажи тарифы", "Покажи список ОС"];
+    } else if (fullText.includes("ssh") || (fullText.includes("ключ") && fullText.includes("добав"))) {
+      suggestions = ["Добавить SSH-ключ", "Показать мои SSH-ключи"];
+    } else if (fullText.includes("бэкап") || fullText.includes("резервн")) {
+      suggestions = ["Создать бэкап сервера", "Показать бэкапы сервера"];
+    } else if (fullText.includes("группу") || fullText.includes("безопасност") || fullText.includes("фаервол")) {
+      suggestions = ["Показать группы безопасности", "Создать группу безопасности"];
+    }
+  }
+
   return (
     <div className="mb-6">
       <div className="text-xs font-medium text-[#10a37f] mb-2 uppercase tracking-wide">Timeweb</div>
       <div className="flex flex-col gap-2">
         {message.parts?.map((part, index) => {
           if (isTextUIPart(part)) {
+            if (hasRichToolOutput) return null;
             return (
               <div key={index} className="prose-chat">
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{part.text}</ReactMarkdown>
@@ -464,6 +545,25 @@ export function Message({ message, onRetry, onSendMessage, timewebToken }: Messa
             return null;
           })}
       </div>
+      {showSuggestions && suggestions && onSendMessage && (
+        <SuggestedActions suggestions={suggestions} onAction={onSendMessage} />
+      )}
+    </div>
+  );
+}
+
+function SuggestedActions({ suggestions, onAction }: { suggestions: string[]; onAction: (text: string) => void }) {
+  return (
+    <div className="flex flex-wrap gap-2 mt-3">
+      {suggestions.map((s) => (
+        <button
+          key={s}
+          onClick={() => onAction(s)}
+          className="bg-[#2a2a2a] hover:bg-[#10a37f]/20 hover:border-[#10a37f]/50 border border-[#3a3a3a] rounded-full px-3 py-1 text-xs text-[#8e8ea0] hover:text-[#ececec] transition-all"
+        >
+          {s}
+        </button>
+      ))}
     </div>
   );
 }

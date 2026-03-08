@@ -7,6 +7,7 @@ import { Server, Plus, Key } from "lucide-react";
 import { ChatInput } from "./chat-input";
 import { Message } from "./message";
 import { ToolCallLog } from "./tool-call-log";
+import { QuickActionsGrid } from "./quick-actions-grid";
 
 const STORAGE_KEY = "chat_messages";
 
@@ -95,6 +96,11 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
     }
   }, [messages]);
 
+  const scrollToBottom = () => {
+    const el = scrollContainerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  };
+
   // Слушаем ручную прокрутку: если ушли вверх — отключаем следование
   useEffect(() => {
     const el = scrollContainerRef.current;
@@ -107,12 +113,18 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Прокручиваем вниз при каждом изменении сообщений, если следование включено
+  // ResizeObserver: скроллим вниз на каждое изменение высоты контента
   useEffect(() => {
-    if (shouldFollow.current) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(() => {
+      if (shouldFollow.current) scrollToBottom();
+    });
+    // Наблюдаем за внутренним контентом
+    const inner = el.firstElementChild;
+    if (inner) observer.observe(inner);
+    return () => observer.disconnect();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);
@@ -148,6 +160,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
   };
 
   const hasMessages = messages.length > 0;
+  const lastAssistantIndex = messages.map((m) => m.role).lastIndexOf("assistant");
 
   return (
     <div className="flex flex-col bg-[#212121]" style={{ height: "100dvh" }}>
@@ -184,17 +197,18 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
         {!hasMessages ? (
           // Стартовый экран
-          <div className="h-full flex flex-col items-center justify-center px-4 text-center">
+          <div className="h-full flex flex-col items-center justify-center px-4 py-8">
             <div className="w-14 h-14 bg-[#10a37f]/10 rounded-2xl flex items-center justify-center mb-5 ring-1 ring-[#10a37f]/20">
               <Server size={28} className="text-[#10a37f]" />
             </div>
-            <h1 className="text-2xl font-bold text-[#ececec] mb-2">Timeweb Manager</h1>
-            <p className="text-[#8e8ea0] text-sm max-w-xs leading-relaxed mb-8">
+            <h1 className="text-2xl font-bold text-[#ececec] mb-2 text-center">Timeweb Manager</h1>
+            <p className="text-[#8e8ea0] text-sm max-w-xs leading-relaxed mb-8 text-center">
               Управляй серверами Timeweb через естественный язык
             </p>
+            <QuickActionsGrid onAction={handleQuickAction} />
             <button
               onClick={onChangeToken}
-              className="flex items-center gap-1.5 text-xs text-[#5a5a6a] hover:text-[#8e8ea0] transition-colors"
+              className="flex items-center gap-1.5 text-xs text-[#5a5a6a] hover:text-[#8e8ea0] transition-colors mt-8"
             >
               <Key size={11} />
               Изменить API-ключ
@@ -205,6 +219,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
           <div className="max-w-2xl mx-auto px-4 py-6">
             {messages.map((m, i) => {
               const userText = m.parts?.find((p) => isTextUIPart(p))?.text ?? "";
+              const isLastAssistantMessage = m.role === "assistant" && i === lastAssistantIndex;
               return (
                 <Message
                   key={m.id}
@@ -216,6 +231,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
                   }
                   onSendMessage={!isLoading ? handleQuickAction : undefined}
                   timewebToken={timewebToken}
+                  showSuggestions={isLastAssistantMessage}
                 />
               );
             })}
