@@ -242,9 +242,14 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                       <div className="text-2xl font-bold text-[#10a37f]">
                         {output.balance} {output.currency ?? "₽"}
                       </div>
-                      {output.hours_left != null && (
-                        <div className="text-xs text-[#8e8ea0] mt-1">
-                          Хватит примерно на {output.hours_left} ч.
+                      {output.days_left != null && (
+                        <div className="text-sm text-[#ececec] mt-2">
+                          Осталось {output.days_left} дн.
+                        </div>
+                      )}
+                      {output.end_date != null && (
+                        <div className="text-xs text-[#8e8ea0] mt-0.5">
+                          Хватит до {output.end_date}
                         </div>
                       )}
                     </div>

@@ -156,10 +156,9 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
     }
   }, [messages]);
 
-  const scrollToBottom = () => {
-    const el = scrollContainerRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  };
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
+  }, []);
 
   // Слушаем ручную прокрутку: если ушли вверх — отключаем следование
   useEffect(() => {
@@ -173,18 +172,10 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // ResizeObserver: скроллим вниз на каждое изменение высоты контента
+  // Скроллим вниз при каждом новом сообщении или стриминге
   useEffect(() => {
-    const el = scrollContainerRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(() => {
-      if (shouldFollow.current) scrollToBottom();
-    });
-    // Наблюдаем за внутренним контентом
-    const inner = el.firstElementChild;
-    if (inner) observer.observe(inner);
-    return () => observer.disconnect();
-  }, []);
+    if (shouldFollow.current) scrollToBottom();
+  }, [messages, isLoading, scrollToBottom]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(e.target.value);

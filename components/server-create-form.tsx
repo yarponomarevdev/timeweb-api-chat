@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Server, Cpu, HardDrive, Zap } from "lucide-react";
-import type { ProposeServerOutput, OsOption, PresetSummary } from "@/lib/tools";
+import type { ProposeServerOutput, OsOption, PresetSummary, LocationOption } from "@/lib/tools";
 
 interface ServerCreateFormProps {
   data: ProposeServerOutput;
@@ -12,8 +12,11 @@ interface ServerCreateFormProps {
 export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   const [selectedOs, setSelectedOs] = useState<OsOption>(data.selected_os);
   const [selectedPreset, setSelectedPreset] = useState<PresetSummary>(data.preset);
+  const [selectedLocation, setSelectedLocation] = useState<LocationOption>(
+    data.available_locations.find((l) => l.code === data.selected_location) ?? data.available_locations[0]
+  );
   const [isCreating, setIsCreating] = useState(false);
-  const { server_name, available_os, available_presets } = data;
+  const { server_name, available_os, available_presets, available_locations } = data;
 
   const diskLabel =
     selectedPreset.disk_gb >= 1000
@@ -59,7 +62,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
     if (isCreating) return;
     setIsCreating(true);
     onConfirm(
-      `Подтверждаю. Создай сервер: name="${server_name}", os_id=${selectedOs.id}, preset_id=${selectedPreset.id}`
+      `Подтверждаю. Создай сервер: name="${server_name}", os_id=${selectedOs.id}, preset_id=${selectedPreset.id}, availability_zone=${selectedLocation.code}`
     );
   };
 
@@ -131,6 +134,32 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
         </div>
       )}
 
+      {/* Выбор локации */}
+      {available_locations.length > 0 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="text-xs text-[#8e8ea0]">Локация:</div>
+          <div className="grid grid-cols-2 gap-2">
+            {available_locations.map((loc) => (
+              <button
+                key={loc.code}
+                onClick={() => setSelectedLocation(loc)}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all ${
+                  selectedLocation.code === loc.code
+                    ? "bg-[#10a37f]/10 border-[#10a37f] text-[#ececec]"
+                    : "bg-[#2f2f2f] border-[#3a3a3a] text-[#8e8ea0] hover:border-[#555] hover:text-[#ececec]"
+                }`}
+              >
+                <span className="text-xl leading-none">{loc.flag}</span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-sm font-medium truncate leading-tight">{loc.city}</span>
+                  <span className="text-[10px] text-[#555] truncate">{loc.country}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Карточка конфигурации */}
       <div className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] p-4 flex flex-col gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-[#ececec]">
@@ -158,6 +187,12 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
             </span>
             <span className="flex items-center gap-1">
               <HardDrive size={11} /> {diskLabel}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-[#8e8ea0]">Локация</span>
+            <span className="text-[#ececec] font-medium">
+              {selectedLocation.flag} {selectedLocation.city}
             </span>
           </div>
           <div className="flex justify-between mt-1">

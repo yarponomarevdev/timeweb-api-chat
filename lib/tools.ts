@@ -64,12 +64,21 @@ export interface PresetSummary {
   bandwidth: number;
 }
 
+export interface LocationOption {
+  code: string;
+  city: string;
+  country: string;
+  flag: string;
+}
+
 export interface ProposeServerOutput {
   server_name: string;
   preset: PresetSummary;
   selected_os: OsOption;
   available_os: OsOption[];
   available_presets: PresetSummary[];
+  selected_location: string;
+  available_locations: LocationOption[];
 }
 
 export interface BalanceOutput {
@@ -78,6 +87,8 @@ export interface BalanceOutput {
   total: number;
   promocode_balance: number;
   hours_left: number | null;
+  days_left: number | null;
+  end_date: string | null;
   is_blocked: boolean;
   penalty: number;
 }
@@ -239,8 +250,9 @@ export function createTools(token: string) {
           .number()
           .describe("ID тарифа из list_presets"),
         comment: z.string().optional().describe("Комментарий к серверу"),
+        availability_zone: z.string().optional().describe("Зона размещения, например ru-1, ru-2, pl-1, nl-1, kz-1"),
       }),
-      execute: async ({ name, os_id, preset_id, comment }) => {
+      execute: async ({ name, os_id, preset_id, comment, availability_zone }) => {
         const presets = await tw.listPresets(token);
         const preset = presets.find((p) => p.id === preset_id);
         const bandwidth = preset?.bandwidth ?? 1000;
@@ -251,6 +263,7 @@ export function createTools(token: string) {
           preset_id,
           bandwidth,
           comment,
+          availability_zone,
         });
 
         if (server.status === "no_paid") {
@@ -321,8 +334,8 @@ export function createTools(token: string) {
           action_label: actionLabels[action] ?? action,
           server_id,
           message: result.result
-            ? `Действие "${actionLabels[action]}" выполнено успешно`
-            : `Не удалось выполнить действие "${actionLabels[action]}"`,
+            ? `Действие «${actionLabels[action]}» выполнено успешно`
+            : `Не удалось выполнить действие «${actionLabels[action]}»`,
         };
       },
     }),
@@ -386,6 +399,14 @@ export function createTools(token: string) {
             bandwidth: p.bandwidth,
           }));
 
+        const availableLocations: LocationOption[] = [
+          { code: "ru-1", city: "Москва", country: "Россия", flag: "🇷🇺" },
+          { code: "ru-2", city: "Санкт-Петербург", country: "Россия", flag: "🇷🇺" },
+          { code: "pl-1", city: "Варшава", country: "Польша", flag: "🇵🇱" },
+          { code: "nl-1", city: "Амстердам", country: "Нидерланды", flag: "🇳🇱" },
+          { code: "kz-1", city: "Алматы", country: "Казахстан", flag: "🇰🇿" },
+        ];
+
         return {
           server_name: name,
           preset: {
@@ -411,6 +432,8 @@ export function createTools(token: string) {
             full_name: `${os.name} ${os.version}`,
           })),
           available_presets: availablePresets,
+          selected_location: "ru-1",
+          available_locations: availableLocations,
         };
       },
     }),
@@ -472,12 +495,19 @@ export function createTools(token: string) {
       inputSchema: z.object({}),
       execute: async () => {
         const finances = await tw.getBalance(token);
+        const hoursLeft = finances.hours_left;
+        const daysLeft = hoursLeft != null ? Math.floor(hoursLeft / 24) : null;
+        const endDate = hoursLeft != null
+          ? new Date(Date.now() + hoursLeft * 3600 * 1000).toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" })
+          : null;
         return {
           balance: finances.balance,
           currency: finances.currency ?? "RUB",
           total: finances.total,
           promocode_balance: finances.promocode_balance,
-          hours_left: finances.hours_left,
+          hours_left: hoursLeft,
+          days_left: daysLeft,
+          end_date: endDate,
           is_blocked: finances.is_blocked,
           penalty: finances.penalty,
         };
