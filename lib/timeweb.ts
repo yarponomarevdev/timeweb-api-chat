@@ -229,7 +229,7 @@ export async function getServerStats(
 
 export async function listFirewalls(token: string): Promise<TimewebFirewallGroup[]> {
   const data = await apiRequest<{ firewall_groups: TimewebFirewallGroup[] }>(
-    "/firewalls",
+    "/firewall/groups",
     token
   );
   return data.firewall_groups ?? [];
@@ -239,7 +239,7 @@ export async function createFirewall(
   token: string,
   params: { name: string; description?: string }
 ): Promise<TimewebFirewallGroup> {
-  const data = await apiRequest<{ firewall_group: TimewebFirewallGroup }>("/firewalls", token, {
+  const data = await apiRequest<{ firewall_group: TimewebFirewallGroup }>("/firewall/groups", token, {
     method: "POST",
     body: JSON.stringify(params),
   });
@@ -247,7 +247,7 @@ export async function createFirewall(
 }
 
 export async function deleteFirewall(token: string, id: string): Promise<null> {
-  return apiRequest(`/firewalls/${id}`, token, { method: "DELETE" });
+  return apiRequest(`/firewall/groups/${id}`, token, { method: "DELETE" });
 }
 
 export async function listFirewallRules(
@@ -255,7 +255,7 @@ export async function listFirewallRules(
   firewallId: string
 ): Promise<TimewebFirewallRule[]> {
   const data = await apiRequest<{ firewall_rules: TimewebFirewallRule[] }>(
-    `/firewalls/${firewallId}/rules`,
+    `/firewall/groups/${firewallId}/rules`,
     token
   );
   return data.firewall_rules ?? [];
@@ -273,7 +273,7 @@ export async function addFirewallRule(
   }
 ): Promise<TimewebFirewallRule> {
   const data = await apiRequest<{ firewall_rule: TimewebFirewallRule }>(
-    `/firewalls/${firewallId}/rules`,
+    `/firewall/groups/${firewallId}/rules`,
     token,
     { method: "POST", body: JSON.stringify(params) }
   );
@@ -285,7 +285,7 @@ export async function deleteFirewallRule(
   firewallId: string,
   ruleId: string
 ): Promise<null> {
-  return apiRequest(`/firewalls/${firewallId}/rules/${ruleId}`, token, { method: "DELETE" });
+  return apiRequest(`/firewall/groups/${firewallId}/rules/${ruleId}`, token, { method: "DELETE" });
 }
 
 export async function attachFirewallToServer(
@@ -293,7 +293,7 @@ export async function attachFirewallToServer(
   firewallId: string,
   serverId: number
 ): Promise<null> {
-  return apiRequest(`/firewalls/${firewallId}/resources/servers`, token, {
+  return apiRequest(`/firewall/groups/${firewallId}/resources/servers`, token, {
     method: "POST",
     body: JSON.stringify({ resource_id: String(serverId) }),
   });
