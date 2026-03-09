@@ -18,6 +18,7 @@ import { createImageTools } from "./images";
 import { createRegistryTools } from "./registry";
 import { createMailTools } from "./mail";
 import { createMiscTools } from "./misc";
+import { createVirtualRouterTools } from "./virtual-routers";
 
 // Re-export типов для message.tsx
 export type {
@@ -80,5 +81,6 @@ export function createTools(token: string) {
     ...createRegistryTools(token),
     ...createMailTools(token),
     ...createMiscTools(token),
+    ...createVirtualRouterTools(token),
   };
 }

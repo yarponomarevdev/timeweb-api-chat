@@ -8,7 +8,7 @@ export function createDedicatedTools(token: string) {
       description:
         "Управление выделенными серверами: list (список), get (детали), create (создать), delete (удалить)",
       inputSchema: z.object({
-        action: z.enum(["list", "get", "create", "delete"]).describe("Действие"),
+        action: z.enum(["list", "get", "create", "delete", "presets"]).describe("Действие"),
         server_id: z.number().optional().describe("ID выделенного сервера (для get, delete)"),
         name: z.string().optional().describe("Имя сервера (для create)"),
         plan_id: z.number().optional().describe("ID тарифного плана (для create)"),
@@ -74,6 +74,18 @@ export function createDedicatedTools(token: string) {
               success: true,
               message: `Выделенный сервер ${input.server_id!} удалён`,
             };
+          }
+          case "presets": {
+            const presets = await tw.listDedicatedPresets(token);
+            return presets.map((p) => ({
+              id: p.id,
+              description: p.description,
+              cpu: `${p.cpu.count}x ${p.cpu.description}`,
+              ram_gb: Math.round((p.ram.size * p.ram.count) / 1024),
+              disk: p.disk.map((d) => `${d.count}x ${d.size}GB ${d.type}`).join(", "),
+              price_per_month: p.price,
+              location: p.location,
+            }));
           }
         }
       },

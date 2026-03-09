@@ -166,9 +166,10 @@ export function createKubernetesTools(token: string) {
         "Получить доступные версии Kubernetes и сетевые драйверы",
       inputSchema: z.object({}),
       execute: async () => {
-        const [versions, drivers] = await Promise.all([
+        const [versions, drivers, presets] = await Promise.all([
           tw.listK8sVersions(token),
           tw.listK8sNetworkDrivers(token),
+          tw.listK8sPresets(token),
         ]);
         return {
           versions: versions.map((v) => ({
@@ -178,6 +179,14 @@ export function createKubernetesTools(token: string) {
           network_drivers: drivers.map((d) => ({
             driver: d.driver,
             description: d.description,
+          })),
+          presets: presets.map((p) => ({
+            id: p.id,
+            description: p.description,
+            cpu: p.cpu,
+            ram_gb: Math.round(p.ram / 1024),
+            disk_gb: p.disk,
+            price_per_month: p.price,
           })),
         };
       },

@@ -9,7 +9,7 @@ export function createBalancerTools(token: string) {
       description:
         "Управление балансировщиками нагрузки: list (список), get (детали), create (создать), delete (удалить)",
       inputSchema: z.object({
-        action: z.enum(["list", "get", "create", "delete"]).describe("Действие"),
+        action: z.enum(["list", "get", "create", "delete", "presets"]).describe("Действие"),
         balancer_id: z.number().optional().describe("ID балансировщика (для get, delete)"),
         name: z.string().optional().describe("Имя балансировщика (для create)"),
         preset_id: z.number().optional().describe("ID тарифа (для create)"),
@@ -94,6 +94,18 @@ export function createBalancerTools(token: string) {
               success: true,
               message: `Балансировщик ${input.balancer_id} удалён`,
             };
+          }
+          case "presets": {
+            const presets = await tw.listBalancerPresets(token);
+            return presets.map((p) => ({
+              id: p.id,
+              description: p.description,
+              bandwidth: p.bandwidth,
+              replica_count: p.replica_count,
+              request_per_second: p.request_per_second,
+              price_per_month: p.price,
+              location: p.location,
+            }));
           }
         }
       },

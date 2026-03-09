@@ -9,7 +9,7 @@ export function createVPCTools(token: string) {
       description:
         "Управление виртуальными частными сетями (VPC): list (список), get (детали), create (создать), delete (удалить)",
       inputSchema: z.object({
-        action: z.enum(["list", "get", "create", "delete"]).describe("Действие"),
+        action: z.enum(["list", "get", "create", "delete", "services"]).describe("Действие"),
         vpc_id: z.string().optional().describe("ID VPC (для get, delete)"),
         name: z.string().optional().describe("Имя VPC (для create)"),
         subnet_v4: z.string().optional().describe("Подсеть IPv4, например 10.0.0.0/24 (для create)"),
@@ -70,6 +70,15 @@ export function createVPCTools(token: string) {
               success: true,
               message: `VPC ${input.vpc_id} удалена`,
             };
+          }
+          case "services": {
+            const services = await tw.listVPCServices(token, input.vpc_id!);
+            return services.map((s) => ({
+              id: s.id,
+              name: s.name,
+              type: s.type,
+              local_ip: s.local_ip,
+            }));
           }
         }
       },

@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart, getToolName, type UIMessage } from "ai";
-import { Server, Plus, Key, Menu, LayoutGrid } from "lucide-react";
+import { Server, Plus, Menu, LayoutGrid } from "lucide-react";
 import { ChatInput } from "./chat-input";
 import { Message } from "./message";
 import { ToolCallLog } from "./tool-call-log";
@@ -250,48 +250,39 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
 
       {/* Header — показывается только когда есть сообщения */}
       {hasMessages && (
-        <header className="flex items-center justify-between px-4 h-14 border-b border-[#2a2a2a] flex-shrink-0">
-          <div className="flex items-center gap-2.5">
+        <header className="flex items-center justify-between px-4 h-12 border-b border-[#2a2a2a] flex-shrink-0">
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors mr-1"
+              className="lg:hidden p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
               title="Меню"
             >
               <Menu size={18} />
             </button>
-            <div className="w-7 h-7 bg-[#10a37f]/15 rounded-lg flex items-center justify-center">
-              <Server size={15} className="text-[#10a37f]" />
-            </div>
-            <span className="font-semibold text-sm text-[#ececec]">evolvin.cloud</span>
           </div>
           <div className="flex items-center gap-1">
             <button
               onClick={() => { fetchServers(); setShowServersPanel(true); }}
-              className="p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+              className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
               title="Мои серверы"
             >
-              <Server size={15} />
+              <Server size={14} />
+              <span className="hidden sm:inline">Серверы</span>
             </button>
             <button
               onClick={() => { fetchPresets(); setShowPresetsPanel(true); }}
-              className="p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+              className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
               title="Тарифы"
             >
-              <LayoutGrid size={15} />
+              <LayoutGrid size={14} />
+              <span className="hidden sm:inline">Тарифы</span>
             </button>
             <button
               onClick={handleNewChat}
-              className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-3 py-1.5 rounded-lg transition-colors"
+              className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
             >
               <Plus size={14} />
               <span className="hidden sm:inline">Новый чат</span>
-            </button>
-            <button
-              onClick={onChangeToken}
-              className="p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
-              title="Изменить API-ключ"
-            >
-              <Key size={15} />
             </button>
           </div>
         </header>
@@ -317,13 +308,6 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
               Управляй серверами evolvin.cloud через естественный язык
             </p>
             <QuickActionsGrid onAction={handleQuickAction} />
-            <button
-              onClick={onChangeToken}
-              className="flex items-center gap-1.5 text-xs text-[#5a5a6a] hover:text-[#8e8ea0] transition-colors mt-8"
-            >
-              <Key size={11} />
-              Изменить API-ключ
-            </button>
           </div>
         ) : (
           // Список сообщений
@@ -387,13 +371,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
           isLoading={isLoading}
           onInputChange={handleInputChange}
           onSubmit={onSubmit}
-          onAction={handleQuickAction}
         />
-
-        {/* Дисклеймер */}
-        <p className="text-center text-xs text-[#5a5a6a] mt-2">
-          AI может допускать ошибки. Проверяйте важную информацию.
-        </p>
       </div>
 
       {/* Уведомления о состоянии серверов */}

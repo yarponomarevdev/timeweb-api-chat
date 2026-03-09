@@ -19,3 +19,4 @@ export * from "./images";
 export * from "./registry";
 export * from "./mail";
 export * from "./misc";
+export * from "./virtual-routers";

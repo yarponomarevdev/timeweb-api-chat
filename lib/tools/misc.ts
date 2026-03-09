@@ -92,5 +92,51 @@ export function createMiscTools(token: string) {
         }
       },
     }),
+    timeweb_api_universal: tool({
+      description:
+        "Универсальный доступ к Timeweb API. Используй, если нужной операции нет в специализированных tools.",
+      inputSchema: z.object({
+        method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]).describe("HTTP метод"),
+        path: z.string().describe("Путь API без домена, например /vpcs или /servers/123"),
+        version: z.enum(["v1", "v2"]).optional().describe("Версия API, по умолчанию v1"),
+        query: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])).optional().describe("Query-параметры"),
+        body: z.record(z.string(), z.unknown()).optional().describe("JSON body для POST/PUT/PATCH"),
+      }),
+      execute: async ({ method, path, version, query, body }) => {
+        if (!path.startsWith("/")) {
+          throw new Error("path должен начинаться с '/'");
+        }
+        if (path.startsWith("http://") || path.startsWith("https://")) {
+          throw new Error("Передай только путь API, без домена");
+        }
+
+        const search = query ? new URLSearchParams(
+          Object.entries(query).map(([k, v]) => [k, String(v)])
+        ).toString() : "";
+        const fullPath = search ? `${path}?${search}` : path;
+
+        const payload =
+          method === "GET" || method === "DELETE"
+            ? undefined
+            : body ?? {};
+
+        const data = await tw.apiRequest<unknown>(
+          fullPath,
+          token,
+          {
+            method,
+            ...(payload ? { body: JSON.stringify(payload) } : {}),
+          },
+          version ?? "v1"
+        );
+
+        return {
+          method,
+          path: fullPath,
+          version: version ?? "v1",
+          data,
+        };
+      },
+    }),
   };
 }

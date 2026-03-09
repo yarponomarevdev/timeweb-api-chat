@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "check:timeweb-coverage": "node scripts/check-timeweb-coverage.mjs"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.33",

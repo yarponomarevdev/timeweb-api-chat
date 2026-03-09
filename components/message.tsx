@@ -85,13 +85,16 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
 
   // Домены
   list_domains: ["Показать базы данных", "Показать мои серверы", "Показать баланс"],
+  domains: ["Показать домены", "Удалить домен", "Показать базы данных"],
 
   // Базы данных
   list_databases: ["Создать базу данных", "Показать мои серверы", "Показать баланс"],
   create_database: ["Показать базы данных", "Показать мои серверы"],
+  databases: ["Показать базы данных", "Создать базу данных", "Удалить базу данных"],
 
   // Хранилище
   list_buckets: ["Показать мои серверы", "Показать баланс"],
+  buckets: ["Показать бакеты", "Создать бакет", "Удалить бакет"],
 
   // Жёсткая перезагрузка
   reboot_server_hard: ["Показать мои серверы", "Показать статистику сервера"],
@@ -100,17 +103,17 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
   k8s_clusters: ["Показать кластеры Kubernetes", "Создать кластер Kubernetes", "Показать мои серверы"],
   k8s_node_groups: ["Показать кластеры Kubernetes", "Добавить группу нод"],
   k8s_kubeconfig: ["Показать кластеры Kubernetes"],
-  k8s_versions: ["Создать кластер Kubernetes"],
+  k8s_versions: ["Создать кластер Kubernetes", "Показать кластеры Kubernetes"],
 
   // Балансировщики
-  load_balancers: ["Показать балансировщики", "Показать мои серверы"],
+  load_balancers: ["Показать балансировщики", "Показать тарифы балансировщиков", "Показать мои серверы"],
   load_balancer_rules: ["Показать балансировщики", "Показать мои серверы"],
 
   // Плавающие IP
   floating_ips: ["Показать плавающие IP", "Показать мои серверы"],
 
   // VPC
-  vpcs: ["Показать VPC", "Показать мои серверы"],
+  vpcs: ["Показать VPC", "Показать ресурсы VPC", "Показать мои серверы"],
 
   // Проекты
   projects: ["Показать проекты", "Показать мои серверы"],
@@ -121,7 +124,7 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
   app_deploys: ["Показать приложения"],
 
   // Выделенные серверы
-  dedicated_servers: ["Показать выделенные серверы", "Показать мои серверы"],
+  dedicated_servers: ["Показать выделенные серверы", "Показать тарифы выделенных серверов", "Показать мои серверы"],
 
   // Сетевые диски
   network_drives: ["Показать сетевые диски", "Показать мои серверы"],
@@ -140,6 +143,8 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
   list_locations: ["Создать сервер", "Показать мои серверы"],
   api_keys: ["Показать API-ключи", "Показать баланс"],
   account_info: ["Показать баланс", "Показать мои серверы"],
+  virtual_routers: ["Показать виртуальные роутеры", "Создать виртуальный роутер"],
+  timeweb_api_universal: ["Показать виртуальные роутеры", "Показать проекты", "Показать API-ключи"],
 };
 
 const RICH_TOOL_OUTPUTS = new Set([
@@ -171,6 +176,11 @@ const RICH_TOOL_OUTPUTS = new Set([
   "list_locations",
   "api_keys",
   "account_info",
+  "virtual_routers",
+  "timeweb_api_universal",
+  "domains",
+  "databases",
+  "buckets",
 ]);
 
 export function Message({ message, onRetry, onSendMessage, timewebToken, showSuggestions = true }: MessageProps) {
@@ -674,7 +684,10 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                     toolName === "mailboxes" || toolName === "api_keys" ||
                     toolName === "k8s_kubeconfig" || toolName === "k8s_versions" ||
                     toolName === "account_info" || toolName === "list_locations" ||
-                    toolName === "apps" || toolName === "app_deploys") {
+                    toolName === "apps" || toolName === "app_deploys" ||
+                    toolName === "virtual_routers" || toolName === "timeweb_api_universal" ||
+                    toolName === "domains" || toolName === "databases" ||
+                    toolName === "buckets") {
                   const raw = part.output;
 
                   // Tool вернул массив напрямую

@@ -1,0 +1,234 @@
+{
+  "meta": {
+    "provider": "Timeweb Cloud Public API",
+    "apiDocsUrl": "https://timeweb.cloud/api-docs",
+    "generatedAt": "2026-03-09",
+    "notes": [
+      "Источник с полной схемой API не отдается как статический HTML, поэтому этот реестр поддерживается в репозитории.",
+      "Цель файла: machine-readable source-of-truth для контроля покрытия tools и client wrappers."
+    ]
+  },
+  "knownTotals": {
+    "publicApiMethodsClaimedByProvider": 126
+  },
+  "domains": [
+    {
+      "name": "servers",
+      "basePath": "/servers",
+      "methods": [
+        "GET /servers",
+        "GET /servers/{id}",
+        "POST /servers",
+        "DELETE /servers/{id}",
+        "POST /servers/{id}/action",
+        "PATCH /servers/{id}",
+        "GET /servers/{id}/statistics",
+        "GET /servers/{id}/backups",
+        "POST /servers/{id}/backups",
+        "POST /servers/{id}/backups/{backupId}/restore"
+      ]
+    },
+    {
+      "name": "presets_os_balance",
+      "methods": [
+        "GET /presets/servers",
+        "GET /os/servers",
+        "GET /account/finances"
+      ]
+    },
+    {
+      "name": "ssh_keys",
+      "basePath": "/ssh-keys",
+      "methods": [
+        "GET /ssh-keys",
+        "POST /ssh-keys",
+        "DELETE /ssh-keys/{id}"
+      ]
+    },
+    {
+      "name": "firewall",
+      "basePath": "/firewall/groups",
+      "methods": [
+        "GET /firewall/groups",
+        "POST /firewall/groups",
+        "DELETE /firewall/groups/{id}",
+        "GET /firewall/groups/{id}/rules",
+        "POST /firewall/groups/{id}/rules",
+        "DELETE /firewall/groups/{id}/rules/{ruleId}",
+        "POST /firewall/groups/{id}/resources/servers"
+      ]
+    },
+    {
+      "name": "domains",
+      "basePath": "/domains",
+      "methods": [
+        "GET /domains"
+      ]
+    },
+    {
+      "name": "databases",
+      "basePath": "/dbs",
+      "methods": [
+        "GET /dbs",
+        "POST /dbs"
+      ]
+    },
+    {
+      "name": "s3_buckets",
+      "basePath": "/storages/buckets",
+      "methods": [
+        "GET /storages/buckets"
+      ]
+    },
+    {
+      "name": "kubernetes",
+      "methods": [
+        "GET /k8s/clusters",
+        "GET /k8s/clusters/{id}",
+        "POST /k8s/clusters",
+        "DELETE /k8s/clusters/{id}",
+        "GET /k8s/clusters/{clusterId}/groups",
+        "POST /k8s/clusters/{clusterId}/groups",
+        "DELETE /k8s/clusters/{clusterId}/groups/{groupId}",
+        "GET /k8s/clusters/{id}/kubeconfig",
+        "GET /k8s/k8s_versions",
+        "GET /k8s/network_drivers",
+        "GET /presets/k8s"
+      ]
+    },
+    {
+      "name": "balancers",
+      "methods": [
+        "GET /balancers",
+        "GET /balancers/{id}",
+        "POST /balancers",
+        "DELETE /balancers/{id}",
+        "GET /balancers/{id}/rules",
+        "POST /balancers/{id}/rules",
+        "DELETE /balancers/{id}/rules/{ruleId}",
+        "GET /presets/balancers"
+      ]
+    },
+    {
+      "name": "floating_ips",
+      "methods": [
+        "GET /floating-ips",
+        "GET /floating-ips/{id}",
+        "POST /floating-ips",
+        "DELETE /floating-ips/{id}",
+        "POST /floating-ips/{id}/bind",
+        "POST /floating-ips/{id}/unbind"
+      ]
+    },
+    {
+      "name": "vpc",
+      "methods": [
+        "GET /vpcs",
+        "GET /vpcs/{id}",
+        "POST /vpcs",
+        "DELETE /vpcs/{id}",
+        "GET /vpcs/{id}/services"
+      ]
+    },
+    {
+      "name": "projects",
+      "methods": [
+        "GET /projects",
+        "GET /projects/{id}",
+        "POST /projects",
+        "DELETE /projects/{id}",
+        "GET /projects/{id}/resources",
+        "POST /projects/{id}/resources",
+        "DELETE /projects/{id}/resources"
+      ]
+    },
+    {
+      "name": "apps",
+      "methods": [
+        "GET /apps",
+        "GET /apps/{id}",
+        "POST /apps",
+        "DELETE /apps/{id}",
+        "GET /apps/{id}/deploys",
+        "POST /apps/{id}/deploy"
+      ]
+    },
+    {
+      "name": "dedicated_servers",
+      "methods": [
+        "GET /dedicated-servers",
+        "GET /dedicated-servers/{id}",
+        "POST /dedicated-servers",
+        "DELETE /dedicated-servers/{id}",
+        "GET /presets/dedicated-servers"
+      ]
+    },
+    {
+      "name": "network_drives",
+      "methods": [
+        "GET /network-drives",
+        "GET /network-drives/{id}",
+        "POST /network-drives",
+        "DELETE /network-drives/{id}",
+        "POST /network-drives/{id}/bind",
+        "POST /network-drives/{id}/unbind"
+      ]
+    },
+    {
+      "name": "images",
+      "methods": [
+        "GET /images",
+        "GET /images/{id}",
+        "POST /images",
+        "DELETE /images/{id}",
+        "POST /images/{id}/download-url"
+      ]
+    },
+    {
+      "name": "container_registry",
+      "methods": [
+        "GET /dbs/docker-registries",
+        "GET /dbs/docker-registries/{id}",
+        "POST /dbs/docker-registries",
+        "DELETE /dbs/docker-registries/{id}"
+      ]
+    },
+    {
+      "name": "mail",
+      "methods": [
+        "GET /mail/domains",
+        "POST /mail/domains",
+        "DELETE /mail/domains/{id}",
+        "GET /mail/domains/{id}/mailboxes",
+        "POST /mail/domains/{id}/mailboxes",
+        "DELETE /mail/domains/{id}/mailboxes/{mailboxId}"
+      ]
+    },
+    {
+      "name": "misc",
+      "methods": [
+        "GET /locations (v2)",
+        "GET /auth/api-keys",
+        "POST /auth/api-keys",
+        "DELETE /auth/api-keys/{id}",
+        "GET /account/status",
+        "GET /account/notification-settings"
+      ]
+    },
+    {
+      "name": "virtual_routers",
+      "methods": [
+        "GET /virtual-routers",
+        "GET /virtual-routers/{id}",
+        "POST /virtual-routers",
+        "DELETE /virtual-routers/{id}"
+      ]
+    }
+  ],
+  "unverifiedDomainsFromPublicDocs": [
+    "domains_dns_records",
+    "ssl_certificates",
+    "iam_access_control",
+    "payment_billing_documents"
+  ]
+}
