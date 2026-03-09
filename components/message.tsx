@@ -678,6 +678,62 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                   );
                 }
 
+                // ─── Маркетплейс ПО — интерактивная сетка ───
+                if (toolName === "software") {
+                  const raw = part.output;
+                  if (Array.isArray(raw)) {
+                    if (raw.length === 0) {
+                      return <p key={index} className="text-[#8e8ea0] text-sm my-2">Ничего не найдено</p>;
+                    }
+                    return (
+                      <div key={index} className="my-3 grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        {raw.map((raw_item: Record<string, unknown>, i: number) => {
+                          const sw = { name: String(raw_item.name ?? ""), category: raw_item.category ? String(raw_item.category) : null, description: raw_item.description ? String(raw_item.description) : null, os_label: raw_item.os_label ? String(raw_item.os_label) : null, min_ram_mb: raw_item.min_ram_mb ? Number(raw_item.min_ram_mb) : null };
+                          return (
+                            <button
+                              key={i}
+                              onClick={() => onSendMessage?.(`Создай сервер с ${sw.name}`)}
+                              title={sw.description ?? undefined}
+                              className="flex flex-col gap-1 p-3 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#10a37f]/40 rounded-xl text-left transition-all group"
+                            >
+                              <span className="text-sm font-medium text-[#ececec] group-hover:text-[#10a37f] transition-colors">
+                                {sw.name}
+                              </span>
+                              {sw.category && (
+                                <span className="text-[10px] text-[#10a37f]/70 uppercase tracking-wide">
+                                  {sw.category}
+                                </span>
+                              )}
+                              {(sw.os_label || sw.min_ram_mb) && (
+                                <span className="text-[10px] text-[#6e6e80] mt-auto pt-1">
+                                  {[sw.os_label, sw.min_ram_mb ? `от ${sw.min_ram_mb / 1024} ГБ RAM` : null].filter(Boolean).join(" · ")}
+                                </span>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    );
+                  }
+                  // Одиночный элемент — тоже кликабельный
+                  const output = raw as Record<string, unknown>;
+                  const swName = String(output.name ?? "");
+                  const swDesc = output.description ? String(output.description) : null;
+                  return (
+                    <div key={index} className="my-3">
+                      <button
+                        onClick={() => onSendMessage?.(`Создай сервер с ${swName}`)}
+                        title={swDesc ?? undefined}
+                        className="flex flex-col gap-1 p-3 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#10a37f]/40 rounded-xl text-left transition-all group w-full max-w-xs"
+                      >
+                        <span className="text-sm font-medium text-[#ececec] group-hover:text-[#10a37f] transition-colors">
+                          {swName}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                }
+
                 // ─── Универсальный рендер для всех compound/new tools ───
                 if (toolName === "k8s_clusters" || toolName === "k8s_node_groups" ||
                     toolName === "load_balancers" || toolName === "load_balancer_rules" ||
@@ -691,7 +747,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                     toolName === "apps" || toolName === "app_deploys" ||
                     toolName === "virtual_routers" || toolName === "timeweb_api_universal" ||
                     toolName === "domains" || toolName === "databases" ||
-                    toolName === "buckets" || toolName === "software") {
+                    toolName === "buckets") {
                   const raw = part.output;
 
                   // Tool вернул массив напрямую

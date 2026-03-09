@@ -1,7 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import * as tw from "@/lib/timeweb";
-import type { SoftwareOption } from "./software";
+import { stripHtml, type SoftwareOption } from "./software";
 
 export interface OsOption {
   id: number;
@@ -25,8 +25,19 @@ export interface LocationOption {
   code: string;
   city: string;
   country: string;
-  flag: string;
 }
+
+/** Маппинг location → читаемое название */
+const LOCATION_LABELS: Record<string, { city: string; country: string }> = {
+  "ru-1": { city: "Санкт-Петербург", country: "Россия" },
+  "ru-2": { city: "Новосибирск", country: "Россия" },
+  "ru-3": { city: "Москва", country: "Россия" },
+  "pl-1": { city: "Гданьск", country: "Польша" },
+  "kz-1": { city: "Алматы", country: "Казахстан" },
+  "nl-1": { city: "Амстердам", country: "Нидерланды" },
+  "us-2": { city: "Нью-Йорк", country: "США" },
+  "de-1": { city: "Франкфурт", country: "Германия" },
+};
 
 export interface ProposeServerOutput {
   mode?: "os" | "software";
@@ -69,9 +80,10 @@ export function createPresetTools(token: string) {
           .describe("Желаемый размер RAM в МБ (например 2048 для 2 GB)"),
       }),
       execute: async ({ name, os_query, ram_mb }) => {
-        const [presets, osList] = await Promise.all([
+        const [presets, osList, locations] = await Promise.all([
           tw.listPresets(token),
           tw.listOS(token),
+          tw.listLocations(token),
         ]);
 
         const targetRam = ram_mb ?? 2048;
@@ -111,13 +123,13 @@ export function createPresetTools(token: string) {
             bandwidth: p.bandwidth,
           }));
 
-        const availableLocations: LocationOption[] = [
-          { code: "ru-1", city: "Москва", country: "Россия", flag: "🇷🇺" },
-          { code: "ru-2", city: "Санкт-Петербург", country: "Россия", flag: "🇷🇺" },
-          { code: "pl-1", city: "Варшава", country: "Польша", flag: "🇵🇱" },
-          { code: "nl-1", city: "Амстердам", country: "Нидерланды", flag: "🇳🇱" },
-          { code: "kz-1", city: "Алматы", country: "Казахстан", flag: "🇰🇿" },
-        ];
+        const presetLocations = new Set(presets.map((p) => p.location));
+        const availableLocations: LocationOption[] = locations
+          .filter((loc) => presetLocations.has(loc.location))
+          .map((loc) => {
+            const label = LOCATION_LABELS[loc.location] ?? { city: loc.location, country: loc.location_code };
+            return { code: loc.location, city: label.city, country: label.country };
+          });
 
         return {
           server_name: name,
@@ -144,7 +156,7 @@ export function createPresetTools(token: string) {
             full_name: `${os.name} ${os.version}`,
           })),
           available_presets: availablePresets,
-          selected_location: "ru-1",
+          selected_location: availableLocations[0]?.code ?? "ru-1",
           available_locations: availableLocations,
         };
       },
@@ -161,9 +173,10 @@ export function createPresetTools(token: string) {
           .describe("Желаемый размер RAM в МБ. Если не указан, берётся минимум для ПО или 2048"),
       }),
       execute: async ({ name, software_query, ram_mb }) => {
-        const [presets, softwareList] = await Promise.all([
+        const [presets, softwareList, locations] = await Promise.all([
           tw.listPresets(token),
           tw.listSoftware(token),
+          tw.listLocations(token),
         ]);
 
         const query = software_query.toLowerCase().trim();
@@ -201,13 +214,13 @@ export function createPresetTools(token: string) {
             bandwidth: p.bandwidth,
           }));
 
-        const availableLocations: LocationOption[] = [
-          { code: "ru-1", city: "Москва", country: "Россия", flag: "🇷🇺" },
-          { code: "ru-2", city: "Санкт-Петербург", country: "Россия", flag: "🇷🇺" },
-          { code: "pl-1", city: "Варшава", country: "Польша", flag: "🇵🇱" },
-          { code: "nl-1", city: "Амстердам", country: "Нидерланды", flag: "🇳🇱" },
-          { code: "kz-1", city: "Алматы", country: "Казахстан", flag: "🇰🇿" },
-        ];
+        const presetLocations = new Set(presets.map((p) => p.location));
+        const availableLocations: LocationOption[] = locations
+          .filter((loc) => presetLocations.has(loc.location))
+          .map((loc) => {
+            const label = LOCATION_LABELS[loc.location] ?? { city: loc.location, country: loc.location_code };
+            return { code: loc.location, city: label.city, country: label.country };
+          });
 
         return {
           mode: "software",
@@ -228,7 +241,7 @@ export function createPresetTools(token: string) {
             name: selectedSoftware.name,
             full_name: selectedSoftware.name,
             category: selectedSoftware.category ?? undefined,
-            description: selectedSoftware.description ?? undefined,
+            description: stripHtml(selectedSoftware.description),
             os_label: selectedSoftware.os
               ? [selectedSoftware.os.name, selectedSoftware.os.version].filter(Boolean).join(" ")
               : undefined,
@@ -240,7 +253,7 @@ export function createPresetTools(token: string) {
             name: item.name,
             full_name: item.name,
             category: item.category ?? undefined,
-            description: item.description ?? undefined,
+            description: stripHtml(item.description),
             os_label: item.os ? [item.os.name, item.os.version].filter(Boolean).join(" ") : undefined,
             min_ram_mb: item.requirements?.min_ram,
             min_disk_gb: item.requirements?.min_disk,
@@ -257,7 +270,7 @@ export function createPresetTools(token: string) {
                 price_per_month: preset.price,
                 bandwidth: preset.bandwidth,
               }],
-          selected_location: "ru-1",
+          selected_location: availableLocations[0]?.code ?? "ru-1",
           available_locations: availableLocations,
         } satisfies ProposeServerOutput;
       },

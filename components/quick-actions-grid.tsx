@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Server, Plus, Wallet, LayoutList, KeyRound, BarChart2 } from "lucide-react";
+import { Server, Plus, Wallet, LayoutList, KeyRound, BarChart2, ShoppingBag } from "lucide-react";
 
 interface QuickAction {
   icon: React.ReactNode;
@@ -42,10 +42,10 @@ const QUICK_ACTIONS: QuickAction[] = [
     message: "Покажи мои SSH-ключи",
   },
   {
-    icon: <BarChart2 size={20} />,
-    title: "Статистика",
-    description: "Мониторинг сервера",
-    message: "Покажи статистику сервера",
+    icon: <ShoppingBag size={20} />,
+    title: "Маркетплейс",
+    description: "ПО для серверов",
+    message: "Покажи ПО из маркетплейса",
   },
 ];
 

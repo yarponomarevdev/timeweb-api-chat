@@ -51,6 +51,11 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
 
+/* Более заметный скроллбар для сайдбара */
+.sidebar-scroll { scrollbar-width: thin; scrollbar-color: #555 transparent; }
+.sidebar-scroll::-webkit-scrollbar-thumb { background: #555; }
+.sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #777; }
+
 /* Утилита для полного скрытия scrollbar */
 .no-scrollbar { scrollbar-width: none; -ms-overflow-style: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }

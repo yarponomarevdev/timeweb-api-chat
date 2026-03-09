@@ -9,13 +9,25 @@ export function createMiscTools(token: string) {
       inputSchema: z.object({}),
       execute: async () => {
         const locations = await tw.listLocations(token);
-        return locations.map((loc) => ({
-          id: loc.id,
-          description: loc.description,
-          country: loc.country,
-          city: loc.city,
-          availability_zones: loc.availability_zones,
-        }));
+        const LOCATION_LABELS: Record<string, { city: string; country: string }> = {
+          "ru-1": { city: "Санкт-Петербург", country: "Россия" },
+          "ru-2": { city: "Новосибирск", country: "Россия" },
+          "ru-3": { city: "Москва", country: "Россия" },
+          "pl-1": { city: "Гданьск", country: "Польша" },
+          "kz-1": { city: "Алматы", country: "Казахстан" },
+          "nl-1": { city: "Амстердам", country: "Нидерланды" },
+          "us-2": { city: "Нью-Йорк", country: "США" },
+          "de-1": { city: "Франкфурт", country: "Германия" },
+        };
+        return locations.map((loc) => {
+          const label = LOCATION_LABELS[loc.location] ?? { city: loc.location, country: loc.location_code };
+          return {
+            id: loc.location,
+            city: label.city,
+            country: label.country,
+            availability_zones: loc.availability_zones,
+          };
+        });
       },
     }),
 

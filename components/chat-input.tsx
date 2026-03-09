@@ -51,7 +51,8 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInp
       <button
         type="submit"
         disabled={isLoading || !input.trim()}
-        className="ml-2 mb-1 p-2 rounded-xl bg-white text-black disabled:bg-[#3a3a3a] disabled:text-[#8e8ea0] hover:bg-gray-200 transition-colors flex-shrink-0"
+        aria-label="Отправить сообщение"
+        className="ml-2 mb-1 p-2 rounded-xl bg-[#10a37f] text-white disabled:bg-[#3a3a3a] disabled:text-[#555] hover:bg-[#0e9572] transition-colors flex-shrink-0"
       >
         <ArrowUp size={20} />
       </button>

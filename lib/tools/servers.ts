@@ -138,24 +138,38 @@ export function createServerTools(token: string) {
           software_id: z.number().optional().describe("ID ПО из software(action: 'list')"),
           preset_id: z.number().describe("ID тарифа из list_presets"),
           comment: z.string().optional().describe("Комментарий к серверу"),
-          availability_zone: z.string().optional().describe("Зона размещения, например ru-1, ru-2, pl-1, nl-1, kz-1"),
+          availability_zone: z.string().optional().describe("Код локации для выбора пресета: ru-1 (СПб), ru-2 (Новосибирск), ru-3 (Москва), nl-1 (Амстердам), us-2 (Нью-Йорк), kz-1 (Алматы)"),
         })
         .refine((v) => v.os_id != null || v.software_id != null, {
           message: "Нужно передать os_id или software_id",
         }),
       execute: async ({ name, os_id, software_id, preset_id, comment, availability_zone }) => {
         const presets = await tw.listPresets(token);
-        const preset = presets.find((p) => p.id === preset_id);
-        const bandwidth = preset?.bandwidth ?? 1000;
+        const originalPreset = presets.find((p) => p.id === preset_id);
+
+        // Локация определяется пресетом — ищем пресет для нужной локации
+        let finalPreset = originalPreset;
+        if (originalPreset && availability_zone && originalPreset.location !== availability_zone) {
+          const match = presets.find(
+            (p) =>
+              p.location === availability_zone &&
+              p.cpu === originalPreset.cpu &&
+              p.ram === originalPreset.ram &&
+              p.disk === originalPreset.disk
+          );
+          if (match) finalPreset = match;
+        }
+
+        const bandwidth = finalPreset?.bandwidth ?? 1000;
+        const finalPresetId = finalPreset?.id ?? preset_id;
 
         const server = await tw.createServer(token, {
           name,
-          os_id,
-          software_id,
-          preset_id,
+          ...(os_id ? { os_id } : {}),
+          ...(software_id ? { software_id } : {}),
+          preset_id: finalPresetId,
           bandwidth,
-          comment,
-          availability_zone,
+          ...(comment ? { comment } : {}),
         });
 
         if (server.status === "no_paid") {

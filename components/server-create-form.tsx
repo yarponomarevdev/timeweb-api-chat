@@ -14,10 +14,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   const [selectedOs, setSelectedOs] = useState<OsOption | undefined>(data.selected_os);
   const [selectedSoftware, setSelectedSoftware] = useState(data.selected_software);
   const [selectedPreset, setSelectedPreset] = useState<PresetSummary>(data.preset);
-  const defaultLocations: LocationOption[] = [
-    { code: "ru-1", city: "Москва", country: "Россия", flag: "🇷🇺" },
-  ];
-  const locations = data.available_locations ?? defaultLocations;
+  const locations = data.available_locations ?? [];
   const [selectedLocation, setSelectedLocation] = useState<LocationOption>(
     locations.find((l) => l.code === data.selected_location) ?? locations[0]
   );
@@ -30,44 +27,53 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
       ? `${Math.round(selectedPreset.disk_gb / 1024)} TB`
       : `${selectedPreset.disk_gb} GB`;
 
-  // Уникальные уровни RAM из списка пресетов
+  // Уникальные уровни CPU, RAM, диска из списка пресетов
+  const uniqueCpuLevels = [...new Set(available_presets.map((p) => p.cpu))].sort((a, b) => a - b);
   const uniqueRamLevels = [...new Set(available_presets.map((p) => p.ram_gb))].sort((a, b) => a - b);
+  const uniqueDiskLevels = [...new Set(available_presets.map((p) => p.disk_gb))].sort((a, b) => a - b);
 
-  // Все уникальные размеры диска из доступных пресетов
-  const uniqueDiskLevels = available_presets
-    .map((p) => p.disk_gb)
-    .filter((d, i, arr) => arr.indexOf(d) === i)
-    .sort((a, b) => a - b);
+  /** Найти лучший пресет при изменении одного параметра */
+  const findPreset = (cpu?: number, ramGb?: number, diskGb?: number) => {
+    const targetCpu = cpu ?? selectedPreset.cpu;
+    const targetRam = ramGb ?? selectedPreset.ram_gb;
+    const targetDisk = diskGb ?? selectedPreset.disk_gb;
+
+    // Точное совпадение по всем трём
+    const exact = available_presets.find(
+      (p) => p.cpu === targetCpu && p.ram_gb === targetRam && p.disk_gb === targetDisk
+    );
+    if (exact) return exact;
+
+    // Пресеты, где изменённый параметр совпадает
+    const matching = available_presets
+      .filter((p) => (cpu != null ? p.cpu === cpu : true) && (ramGb != null ? p.ram_gb === ramGb : true) && (diskGb != null ? p.disk_gb === diskGb : true))
+      .sort((a, b) => a.price_per_month - b.price_per_month);
+
+    if (matching.length > 0) return matching[0];
+
+    return available_presets[0];
+  };
+
+  const handleCpuSelect = (cpu: number) => {
+    const preset = findPreset(cpu, undefined, undefined);
+    if (preset) setSelectedPreset(preset);
+  };
 
   const handleRamSelect = (ramGb: number) => {
-    const presetsForRam = available_presets
-      .filter((p) => p.ram_gb === ramGb)
-      .sort((a, b) => a.price_per_month - b.price_per_month);
-    const sameDiskPreset = presetsForRam.find((p) => p.disk_gb === selectedPreset.disk_gb);
-    if (sameDiskPreset) {
-      setSelectedPreset(sameDiskPreset);
-      return;
-    }
-    if (presetsForRam[0]) setSelectedPreset(presetsForRam[0]);
+    const preset = findPreset(undefined, ramGb, undefined);
+    if (preset) setSelectedPreset(preset);
   };
 
   const handleDiskSelect = (diskGb: number) => {
-    const presetsForDisk = available_presets
-      .filter((p) => p.disk_gb === diskGb)
-      .sort((a, b) => a.price_per_month - b.price_per_month);
-
-    const sameRamPreset = presetsForDisk.find((p) => p.ram_gb === selectedPreset.ram_gb);
-    if (sameRamPreset) {
-      setSelectedPreset(sameRamPreset);
-      return;
-    }
-
-    if (presetsForDisk[0]) setSelectedPreset(presetsForDisk[0]);
+    const preset = findPreset(undefined, undefined, diskGb);
+    if (preset) setSelectedPreset(preset);
   };
 
   const handleCreate = () => {
     if (isCreating) return;
     setIsCreating(true);
+    setTimeout(() => setIsCreating(false), 3000);
+
     if (isMarketplace && selectedSoftware) {
       onConfirm(
         `Подтверждаю. Создай сервер: name="${server_name}", software_id=${selectedSoftware.id}, preset_id=${selectedPreset.id}, availability_zone=${selectedLocation.code}`
@@ -84,6 +90,28 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
 
   return (
     <div className="my-2 flex flex-col gap-3 max-w-sm">
+      {/* Выбор CPU */}
+      {uniqueCpuLevels.length > 1 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="text-xs text-[#8e8ea0]">Процессор:</div>
+          <div className="flex flex-wrap gap-2">
+            {uniqueCpuLevels.map((cpu) => (
+              <button
+                key={cpu}
+                onClick={() => handleCpuSelect(cpu)}
+                className={`border rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer ${
+                  selectedPreset.cpu === cpu
+                    ? "bg-[#10a37f] border-[#10a37f] text-white"
+                    : "bg-[#2f2f2f] border-[#3a3a3a] text-[#ececec] hover:border-[#10a37f]"
+                }`}
+              >
+                {cpu} vCPU
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Выбор RAM */}
       {uniqueRamLevels.length > 1 && (
         <div className="flex flex-col gap-1.5">

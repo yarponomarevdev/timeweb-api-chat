@@ -79,6 +79,7 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
                 onChange={(e) => { setTimewebKey(e.target.value); setErrors(p => ({ ...p, timeweb: undefined })); }}
                 placeholder="Вставьте токен..."
                 autoFocus
+                autoComplete="off"
                 className={`w-full bg-[#1a1a1a] border rounded-xl px-4 py-3 pr-11 text-[#ececec] placeholder-[#444] text-sm focus:outline-none transition-colors font-mono ${
                   errors.timeweb ? "border-red-500/50" : "border-[#2f2f2f] focus:border-[#10a37f]/50"
                 }`}
@@ -119,6 +120,7 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
                 value={openaiKey}
                 onChange={(e) => { setOpenaiKey(e.target.value); setErrors(p => ({ ...p, openai: undefined })); }}
                 placeholder="sk-..."
+                autoComplete="off"
                 className={`w-full bg-[#1a1a1a] border rounded-xl px-4 py-3 pr-11 text-[#ececec] placeholder-[#444] text-sm focus:outline-none transition-colors font-mono ${
                   errors.openai ? "border-red-500/50" : "border-[#2f2f2f] focus:border-[#10a37f]/50"
                 }`}
@@ -144,12 +146,12 @@ export function ApiKeySetup({ initialTimewebKey = "", initialOpenaiKey = "", onS
             Ключи хранятся только в вашем браузере
           </div>
 
-          {/* Кнопка входа */}
+          {/* Кнопка входа / сохранения */}
           <button
             type="submit"
             className="w-full bg-[#10a37f] hover:bg-[#0e9572] active:bg-[#0b7a60] text-white font-medium py-3 rounded-xl transition-colors text-sm mt-1"
           >
-            Войти
+            {onCancel ? "Сохранить" : "Войти"}
           </button>
         </form>
 

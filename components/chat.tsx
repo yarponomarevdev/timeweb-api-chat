@@ -251,11 +251,11 @@ export function Chat({
 
       {/* Header — показывается только когда есть сообщения */}
       {hasMessages && (
-        <header className="flex items-center justify-between px-4 h-12 border-b border-[#2a2a2a] flex-shrink-0">
+        <header className="flex items-center justify-between px-4 h-12 border-b border-[#2a2a2a] flex-shrink-0 lg:hidden">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+              className="p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
               title="Меню"
             >
               <Menu size={18} />

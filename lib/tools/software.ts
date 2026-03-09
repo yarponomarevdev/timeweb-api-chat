@@ -2,6 +2,15 @@ import { tool } from "ai";
 import { z } from "zod";
 import * as tw from "@/lib/timeweb";
 
+/** Убирает HTML-теги и нормализует пробелы */
+export function stripHtml(html: string | null | undefined): string | undefined {
+  if (!html) return undefined;
+  const text = html.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  // API иногда возвращает ключи локализации вместо текста
+  if (text.startsWith("servers.ext-software-description")) return undefined;
+  return text || undefined;
+}
+
 export interface SoftwareOption {
   id: number;
   name: string;
@@ -40,7 +49,7 @@ export function createSoftwareTools(token: string) {
             name: item.name,
             full_name: item.name,
             category: item.category ?? undefined,
-            description: item.description ?? undefined,
+            description: stripHtml(item.description),
             os_label: item.os ? [item.os.name, item.os.version].filter(Boolean).join(" ") : undefined,
             min_ram_mb: item.requirements?.min_ram,
             min_disk_gb: item.requirements?.min_disk,
@@ -53,7 +62,7 @@ export function createSoftwareTools(token: string) {
           name: item.name,
           full_name: item.name,
           category: item.category ?? undefined,
-          description: item.description ?? undefined,
+          description: stripHtml(item.description),
           os_label: item.os ? [item.os.name, item.os.version].filter(Boolean).join(" ") : undefined,
           install_time: item.install_time ?? undefined,
           min_ram_mb: item.requirements?.min_ram,

@@ -1,9 +1,7 @@
 // Локации
 export interface TimewebLocation {
-  id: string;
-  description: string;
-  country: string;
-  city: string;
+  location: string;
+  location_code: string;
   availability_zones: string[];
 }
 

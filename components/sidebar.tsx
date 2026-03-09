@@ -15,6 +15,7 @@ import {
   Globe,
   Database,
   Package,
+  ShoppingBag,
   Container,
   Network,
   FolderKanban,
@@ -52,6 +53,20 @@ const CATEGORIES: Category[] = [
       { label: "Доступные тарифы", message: "Покажи тарифы" },
       { label: "Список ОС", message: "Покажи список ОС" },
       { label: "Изменить конфигурацию", message: "Хочу изменить конфигурацию сервера" },
+    ],
+  },
+  {
+    icon: <ShoppingBag size={15} />,
+    title: "Маркетплейс",
+    actions: [
+      { label: "Всё ПО", message: "Покажи ПО из маркетплейса" },
+      { label: "Docker", message: "Создай сервер с Docker" },
+      { label: "WordPress", message: "Создай сервер с WordPress" },
+      { label: "GitLab", message: "Создай сервер с GitLab" },
+      { label: "PostgreSQL", message: "Создай сервер с PostgreSQL" },
+      { label: "Node.js", message: "Создай сервер с Node.js" },
+      { label: "Nginx", message: "Создай сервер с Nginx" },
+      { label: "Redis", message: "Создай сервер с Redis" },
     ],
   },
   {
@@ -261,7 +276,7 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
             <MessageSquare size={11} />
             История
           </div>
-          <div className="max-h-48 overflow-y-auto scrollbar-thin">
+          <div className="max-h-48 overflow-y-auto sidebar-scroll">
             {sessions.map((session) => (
               <div
                 key={session.id}
@@ -290,7 +305,7 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
       )}
 
       {/* Категории — скроллируемая область */}
-      <div className="flex-1 overflow-y-auto min-h-0 px-2 py-1 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto min-h-0 px-2 py-1 sidebar-scroll">
         {CATEGORIES.map((cat, i) => (
           <div key={i} className="mb-0.5">
             <button
