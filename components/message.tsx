@@ -95,6 +95,51 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
 
   // Жёсткая перезагрузка
   reboot_server_hard: ["Показать мои серверы", "Показать статистику сервера"],
+
+  // Kubernetes
+  k8s_clusters: ["Показать кластеры Kubernetes", "Создать кластер Kubernetes", "Показать мои серверы"],
+  k8s_node_groups: ["Показать кластеры Kubernetes", "Добавить группу нод"],
+  k8s_kubeconfig: ["Показать кластеры Kubernetes"],
+  k8s_versions: ["Создать кластер Kubernetes"],
+
+  // Балансировщики
+  load_balancers: ["Показать балансировщики", "Показать мои серверы"],
+  load_balancer_rules: ["Показать балансировщики", "Показать мои серверы"],
+
+  // Плавающие IP
+  floating_ips: ["Показать плавающие IP", "Показать мои серверы"],
+
+  // VPC
+  vpcs: ["Показать VPC", "Показать мои серверы"],
+
+  // Проекты
+  projects: ["Показать проекты", "Показать мои серверы"],
+  project_resources: ["Показать проекты", "Показать мои серверы"],
+
+  // Приложения
+  apps: ["Показать приложения", "Показать мои серверы"],
+  app_deploys: ["Показать приложения"],
+
+  // Выделенные серверы
+  dedicated_servers: ["Показать выделенные серверы", "Показать мои серверы"],
+
+  // Сетевые диски
+  network_drives: ["Показать сетевые диски", "Показать мои серверы"],
+
+  // Образы
+  images: ["Показать образы", "Показать мои серверы"],
+
+  // Реестр контейнеров
+  container_registry: ["Показать реестры", "Показать мои серверы"],
+
+  // Почта
+  mail_domains: ["Показать почтовые домены", "Создать почтовый ящик"],
+  mailboxes: ["Показать почтовые домены"],
+
+  // Локации, API-ключи, аккаунт
+  list_locations: ["Создать сервер", "Показать мои серверы"],
+  api_keys: ["Показать API-ключи", "Показать баланс"],
+  account_info: ["Показать баланс", "Показать мои серверы"],
 };
 
 const RICH_TOOL_OUTPUTS = new Set([
@@ -108,6 +153,24 @@ const RICH_TOOL_OUTPUTS = new Set([
   "list_firewalls",
   "get_balance",
   "get_server_stats",
+  "k8s_clusters",
+  "k8s_node_groups",
+  "load_balancers",
+  "floating_ips",
+  "vpcs",
+  "projects",
+  "project_resources",
+  "apps",
+  "app_deploys",
+  "dedicated_servers",
+  "network_drives",
+  "images",
+  "container_registry",
+  "mail_domains",
+  "mailboxes",
+  "list_locations",
+  "api_keys",
+  "account_info",
 ]);
 
 export function Message({ message, onRetry, onSendMessage, timewebToken, showSuggestions = true }: MessageProps) {
@@ -601,6 +664,76 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                   );
                 }
 
+                // ─── Универсальный рендер для всех compound/new tools ───
+                if (toolName === "k8s_clusters" || toolName === "k8s_node_groups" ||
+                    toolName === "load_balancers" || toolName === "load_balancer_rules" ||
+                    toolName === "floating_ips" || toolName === "vpcs" || toolName === "projects" ||
+                    toolName === "project_resources" || toolName === "dedicated_servers" ||
+                    toolName === "network_drives" || toolName === "images" ||
+                    toolName === "container_registry" || toolName === "mail_domains" ||
+                    toolName === "mailboxes" || toolName === "api_keys" ||
+                    toolName === "k8s_kubeconfig" || toolName === "k8s_versions" ||
+                    toolName === "account_info" || toolName === "list_locations" ||
+                    toolName === "apps" || toolName === "app_deploys") {
+                  const raw = part.output;
+
+                  // Tool вернул массив напрямую
+                  if (Array.isArray(raw)) {
+                    if (raw.length === 0) {
+                      return <p key={index} className="text-[#8e8ea0] text-sm my-2">Ничего не найдено</p>;
+                    }
+                    return (
+                      <div key={index} className="my-2 flex flex-col gap-2">
+                        {raw.map((item, i) => (
+                          <ResourceCard key={i} item={item as Record<string, unknown>} />
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  const output = raw as Record<string, unknown>;
+
+                  // Для операций с message — показать как уведомление
+                  if (typeof output.message === "string") {
+                    const success = output.success !== false;
+                    return (
+                      <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+                        {output.message as string}
+                      </div>
+                    );
+                  }
+
+                  // Для списков — найти массив в output
+                  const arrayKey = Object.keys(output).find((k) => Array.isArray(output[k]));
+                  if (arrayKey) {
+                    const items = output[arrayKey] as Array<Record<string, unknown>>;
+                    if (items.length === 0) {
+                      return <p key={index} className="text-[#8e8ea0] text-sm my-2">Ничего не найдено</p>;
+                    }
+                    return (
+                      <div key={index} className="my-2 flex flex-col gap-2">
+                        {items.map((item, i) => (
+                          <ResourceCard key={i} item={item} />
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  // Для строк (kubeconfig и т.п.)
+                  if (typeof output === "string") {
+                    return (
+                      <div key={index} className="bg-[#171717] rounded-xl p-4 border border-[#3a3a3a] my-2 overflow-x-auto">
+                        <pre className="text-sm text-[#ececec] whitespace-pre-wrap">{output}</pre>
+                      </div>
+                    );
+                  }
+
+                  // Для одиночных объектов (get, create)
+                  if (Object.keys(output).length > 0) {
+                    return <ResourceCard key={index} item={output} />;
+                  }
+                }
+
                 // Fallback для неизвестных tools
                 return (
                   <div key={index} className="bg-[#171717] rounded-xl p-4 border border-[#3a3a3a] my-2 w-full overflow-x-auto">
@@ -655,6 +788,76 @@ function StatItem({ label, value }: { label: string; value: string }) {
     <div className="flex justify-between text-sm">
       <span className="text-[#8e8ea0]">{label}</span>
       <span className="text-[#ececec] font-medium">{value}</span>
+    </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const colors: Record<string, string> = {
+    on: "text-green-400 bg-green-900/20",
+    active: "text-green-400 bg-green-900/20",
+    running: "text-green-400 bg-green-900/20",
+    deployed: "text-green-400 bg-green-900/20",
+    off: "text-[#8e8ea0] bg-[#3a3a3a]/50",
+    installing: "text-yellow-400 bg-yellow-900/20",
+    creating: "text-yellow-400 bg-yellow-900/20",
+    pending: "text-yellow-400 bg-yellow-900/20",
+    error: "text-red-400 bg-red-900/20",
+    failed: "text-red-400 bg-red-900/20",
+  };
+  const color = colors[status] ?? "text-[#8e8ea0] bg-[#3a3a3a]/50";
+  return <span className={`text-xs px-2 py-1 rounded-md ${color}`}>{status}</span>;
+}
+
+function ResourceCard({ item }: { item: Record<string, unknown> }) {
+  const name = (item.name ?? item.fqdn ?? item.email ?? item.ip ?? item.id ?? "—") as string;
+  const status = item.status as string | undefined;
+  const description = (item.description ?? item.comment ?? item.type ?? "") as string;
+
+  // Собираем мета-данные для отображения
+  const meta: string[] = [];
+  if (item.location) meta.push(String(item.location));
+  if (item.availability_zone) meta.push(String(item.availability_zone));
+  if (item.subnet_v4) meta.push(String(item.subnet_v4));
+  if (item.country && item.city) meta.push(`${item.city}, ${item.country}`);
+  if (item.size_gb != null) meta.push(`${item.size_gb} ГБ`);
+  if (item.size != null && item.size_gb == null) meta.push(`${item.size} ГБ`);
+  if (item.cpu != null) meta.push(`${item.cpu} CPU`);
+  if (item.ram_gb != null) meta.push(`${item.ram_gb} ГБ RAM`);
+  if (item.price != null) meta.push(`${item.price} ₽/мес`);
+  if (item.created_at) meta.push(new Date(String(item.created_at)).toLocaleString("ru"));
+
+  return (
+    <div className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] px-4 py-3 text-sm">
+      <div className="flex items-center justify-between">
+        <span className="font-medium text-[#ececec]">{String(name)}</span>
+        {status && <StatusBadge status={status} />}
+      </div>
+      {description && <div className="text-xs text-[#8e8ea0] mt-0.5">{description}</div>}
+      {meta.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-1.5 text-xs text-[#8e8ea0]">
+          {meta.map((m, i) => <span key={i}>{m}</span>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function GenericToolOutput({ output }: { output: Record<string, unknown> }) {
+  // Для message-подобных ответов
+  if (typeof output.message === "string") {
+    const success = output.success !== false;
+    return (
+      <div className={`rounded-xl p-3 border my-2 text-sm ${success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+        {output.message as string}
+      </div>
+    );
+  }
+  return (
+    <div className="bg-[#171717] rounded-xl p-4 border border-[#3a3a3a] my-2 w-full overflow-x-auto">
+      <pre className="text-sm text-[#ececec] whitespace-pre-wrap">
+        {JSON.stringify(output, null, 2)}
+      </pre>
     </div>
   );
 }

@@ -12,11 +12,16 @@ interface ServerCreateFormProps {
 export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   const [selectedOs, setSelectedOs] = useState<OsOption>(data.selected_os);
   const [selectedPreset, setSelectedPreset] = useState<PresetSummary>(data.preset);
+  const defaultLocations: LocationOption[] = [
+    { code: "ru-1", city: "Москва", country: "Россия", flag: "🇷🇺" },
+  ];
+  const locations = data.available_locations ?? defaultLocations;
   const [selectedLocation, setSelectedLocation] = useState<LocationOption>(
-    data.available_locations.find((l) => l.code === data.selected_location) ?? data.available_locations[0]
+    locations.find((l) => l.code === data.selected_location) ?? locations[0]
   );
   const [isCreating, setIsCreating] = useState(false);
-  const { server_name, available_os, available_presets, available_locations } = data;
+  const { server_name, available_os, available_presets } = data;
+  const available_locations = locations;
 
   const diskLabel =
     selectedPreset.disk_gb >= 1000

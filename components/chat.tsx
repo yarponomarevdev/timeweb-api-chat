@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart, getToolName, type UIMessage } from "ai";
-import { Server, Plus, Key } from "lucide-react";
+import { Server, Plus, Key, Menu, LayoutGrid } from "lucide-react";
 import { ChatInput } from "./chat-input";
 import { Message } from "./message";
 import { ToolCallLog } from "./tool-call-log";
@@ -13,7 +13,7 @@ import { useServerMonitor } from "@/hooks/use-server-monitor";
 import { QuickViewPanel } from "./quick-view-panel";
 import { ServerCard } from "./server-card";
 import { useTimeweb } from "@/hooks/use-timeweb";
-import { LayoutGrid } from "lucide-react";
+import { Sidebar } from "./sidebar";
 
 const STORAGE_KEY = "chat_messages";
 
@@ -69,6 +69,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
       } else if (msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror")) {
         setErrorMsg("Нет подключения к интернету. Проверьте соединение и попробуйте ещё раз.");
       } else {
+        console.error("[chat] onError:", msg);
         setErrorMsg("Что-то пошло не так. Попробуйте повторить запрос или проверьте настройки ключей.");
       }
     },
@@ -79,6 +80,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
   const [showServersPanel, setShowServersPanel] = useState(false);
   const [showPresetsPanel, setShowPresetsPanel] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const {
     servers: cachedServers,
@@ -214,12 +216,49 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
   const lastAssistantIndex = messages.map((m) => m.role).lastIndexOf("assistant");
 
   return (
-    <div className="flex flex-col bg-[#212121]" style={{ height: "100dvh" }}>
+    <div className="flex bg-[#212121]" style={{ height: "100dvh" }}>
+
+      {/* Сайдбар — десктоп: всегда виден, мобильный: оверлей */}
+      <div className="hidden lg:block flex-shrink-0">
+        <Sidebar
+          onAction={handleQuickAction}
+          onNewChat={handleNewChat}
+          onChangeToken={onChangeToken}
+        />
+      </div>
+
+      {/* Мобильный оверлей сайдбара */}
+      {sidebarOpen && (
+        <div className="fixed inset-0 z-50 lg:hidden flex">
+          <div className="flex-shrink-0">
+            <Sidebar
+              onAction={handleQuickAction}
+              onNewChat={handleNewChat}
+              onChangeToken={onChangeToken}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </div>
+          <div
+            className="flex-1 bg-black/50"
+            onClick={() => setSidebarOpen(false)}
+          />
+        </div>
+      )}
+
+      {/* Основной контент */}
+      <div className="flex-1 flex flex-col min-w-0">
 
       {/* Header — показывается только когда есть сообщения */}
       {hasMessages && (
         <header className="flex items-center justify-between px-4 h-14 border-b border-[#2a2a2a] flex-shrink-0">
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors mr-1"
+              title="Меню"
+            >
+              <Menu size={18} />
+            </button>
             <div className="w-7 h-7 bg-[#10a37f]/15 rounded-lg flex items-center justify-center">
               <Server size={15} className="text-[#10a37f]" />
             </div>
@@ -262,7 +301,14 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
         {!hasMessages ? (
           // Стартовый экран
-          <div className="h-full flex flex-col items-center justify-center px-4 py-8">
+          <div className="h-full flex flex-col items-center justify-center px-4 py-8 relative">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden absolute top-4 left-4 p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+              title="Меню"
+            >
+              <Menu size={18} />
+            </button>
             <div className="w-14 h-14 bg-[#10a37f]/10 rounded-2xl flex items-center justify-center mb-5 ring-1 ring-[#10a37f]/20">
               <Server size={28} className="text-[#10a37f]" />
             </div>
@@ -408,6 +454,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
           </div>
         )}
       </QuickViewPanel>
+      </div>
     </div>
   );
 }

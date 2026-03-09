@@ -117,81 +117,9 @@ export interface TimewebCreateServerParams {
 
 export type ServerAction = "start" | "shutdown" | "reboot" | "hard-reboot" | "reset_password" | "reinstall";
 
-export interface TimewebSSHKey {
-  id: number;
-  name: string;
-  body: string;
-  created_at: string;
-  used_at: string | null;
-  fingerprint: string;
-}
-
-export interface TimewebBackup {
-  id: number;
-  name: string;
-  status: string;
-  size: number;
-  created_at: string;
-  comment: string;
-}
-
-export interface TimewebFirewallGroup {
-  id: string;
-  name: string;
-  description: string;
-  status: string;
-  rules_count: number;
-  resources_count: number;
-  created_at: string;
-}
-
-export interface TimewebFirewallRule {
-  id: string;
-  direction: "ingress" | "egress";
-  protocol: "tcp" | "udp" | "icmp" | "all";
-  port: string | null;
-  cidr: string;
-  description: string;
-}
-
 export interface TimewebServerStats {
   cpu_load: Array<{ x: string; y: number }>;
   network_traffic: Array<{ x: string; y_in: number; y_out: number }>;
   disk: Array<{ x: string; y: number }>;
   ram: Array<{ x: string; y: number }>;
-}
-
-export interface TimewebDomain {
-  id: number;
-  name: string;
-  fqdn: string;
-  is_autoprolong: boolean;
-  is_premium: boolean;
-  expiration: string;
-  paid_till: string | null;
-  days_left: number;
-  provider: string;
-}
-
-export interface TimewebDatabase {
-  id: number;
-  name: string;
-  type: string;
-  status: string;
-  created_at: string;
-  disk: number;
-  comment: string;
-  preset_id: number;
-  location: string;
-}
-
-export interface TimewebBucket {
-  id: number;
-  name: string;
-  type: "private" | "public";
-  object_amount: number;
-  size: number;
-  location: string;
-  status: string;
-  created_at: string;
 }

@@ -14,6 +14,18 @@ import {
   Database,
   Package,
   ChevronRight,
+  Container,
+  Network,
+  Cloud,
+  Layers,
+  FolderKanban,
+  AppWindow,
+  ServerCog,
+  Disc3,
+  Image,
+  Mail,
+  MapPin,
+  Key,
 } from "lucide-react";
 
 interface Action {
@@ -113,6 +125,80 @@ const CATEGORIES: Category[] = [
     title: "Хранилище",
     actions: [
       { label: "Список бакетов", message: "Покажи мои S3-бакеты" },
+    ],
+  },
+  {
+    icon: <Container size={13} />,
+    title: "Kubernetes",
+    actions: [
+      { label: "Список кластеров", message: "Покажи мои кластеры Kubernetes" },
+      { label: "Создать кластер", message: "Создай кластер Kubernetes" },
+      { label: "Версии K8s", message: "Покажи доступные версии Kubernetes" },
+    ],
+  },
+  {
+    icon: <Network size={13} />,
+    title: "Сеть",
+    actions: [
+      { label: "Балансировщики", message: "Покажи балансировщики нагрузки" },
+      { label: "Плавающие IP", message: "Покажи плавающие IP" },
+      { label: "VPC", message: "Покажи мои VPC" },
+    ],
+  },
+  {
+    icon: <FolderKanban size={13} />,
+    title: "Проекты",
+    actions: [
+      { label: "Список проектов", message: "Покажи мои проекты" },
+      { label: "Создать проект", message: "Создай проект" },
+    ],
+  },
+  {
+    icon: <AppWindow size={13} />,
+    title: "Приложения",
+    actions: [
+      { label: "Список приложений", message: "Покажи мои приложения" },
+      { label: "Запустить деплой", message: "Запусти деплой приложения" },
+    ],
+  },
+  {
+    icon: <ServerCog size={13} />,
+    title: "Выделенные серверы",
+    actions: [
+      { label: "Список серверов", message: "Покажи выделенные серверы" },
+    ],
+  },
+  {
+    icon: <Disc3 size={13} />,
+    title: "Диски и образы",
+    actions: [
+      { label: "Сетевые диски", message: "Покажи сетевые диски" },
+      { label: "Образы", message: "Покажи мои образы" },
+    ],
+  },
+  {
+    icon: <Cloud size={13} />,
+    title: "Реестр контейнеров",
+    actions: [
+      { label: "Список реестров", message: "Покажи реестры контейнеров" },
+    ],
+  },
+  {
+    icon: <Mail size={13} />,
+    title: "Почта",
+    actions: [
+      { label: "Почтовые домены", message: "Покажи почтовые домены" },
+      { label: "Почтовые ящики", message: "Покажи почтовые ящики" },
+    ],
+  },
+  {
+    icon: <Layers size={13} />,
+    title: "Прочее",
+    actions: [
+      { label: "Локации", message: "Покажи доступные локации" },
+      { label: "API-ключи", message: "Покажи мои API-ключи" },
+      { label: "Статус аккаунта", message: "Покажи статус аккаунта" },
+      { label: "Уведомления", message: "Покажи настройки уведомлений" },
     ],
   },
 ];
