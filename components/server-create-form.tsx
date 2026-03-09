@@ -10,7 +10,9 @@ interface ServerCreateFormProps {
 }
 
 export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
-  const [selectedOs, setSelectedOs] = useState<OsOption>(data.selected_os);
+  const isMarketplace = data.mode === "software";
+  const [selectedOs, setSelectedOs] = useState<OsOption | undefined>(data.selected_os);
+  const [selectedSoftware, setSelectedSoftware] = useState(data.selected_software);
   const [selectedPreset, setSelectedPreset] = useState<PresetSummary>(data.preset);
   const defaultLocations: LocationOption[] = [
     { code: "ru-1", city: "Москва", country: "Россия", flag: "🇷🇺" },
@@ -20,7 +22,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
     locations.find((l) => l.code === data.selected_location) ?? locations[0]
   );
   const [isCreating, setIsCreating] = useState(false);
-  const { server_name, available_os, available_presets } = data;
+  const { server_name, available_os, available_presets, available_software = [] } = data;
   const available_locations = locations;
 
   const diskLabel =
@@ -66,6 +68,15 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   const handleCreate = () => {
     if (isCreating) return;
     setIsCreating(true);
+    if (isMarketplace && selectedSoftware) {
+      onConfirm(
+        `Подтверждаю. Создай сервер: name="${server_name}", software_id=${selectedSoftware.id}, preset_id=${selectedPreset.id}, availability_zone=${selectedLocation.code}`
+      );
+      return;
+    }
+
+    if (!selectedOs) return;
+
     onConfirm(
       `Подтверждаю. Создай сервер: name="${server_name}", os_id=${selectedOs.id}, preset_id=${selectedPreset.id}, availability_zone=${selectedLocation.code}`
     );
@@ -117,8 +128,30 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
         </div>
       )}
 
+      {/* Выбор ПО из маркетплейса */}
+      {isMarketplace && available_software.length > 1 && (
+        <div className="flex flex-col gap-1.5">
+          <div className="text-xs text-[#8e8ea0]">ПО из маркетплейса:</div>
+          <div className="flex flex-wrap gap-2">
+            {available_software.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setSelectedSoftware(item)}
+                className={`border rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer ${
+                  selectedSoftware?.id === item.id
+                    ? "bg-[#10a37f] border-[#10a37f] text-white"
+                    : "bg-[#2f2f2f] border-[#3a3a3a] text-[#ececec] hover:border-[#10a37f]"
+                }`}
+              >
+                {item.full_name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Выбор ОС */}
-      {available_os.length > 1 && (
+      {!isMarketplace && available_os.length > 1 && (
         <div className="flex flex-col gap-1.5">
           <div className="text-xs text-[#8e8ea0]">Версия ОС:</div>
           <div className="flex flex-wrap gap-2">
@@ -127,7 +160,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
                 key={os.id}
                 onClick={() => setSelectedOs(os)}
                 className={`border rounded-lg px-3 py-1.5 text-sm transition-colors cursor-pointer ${
-                  selectedOs.id === os.id
+                  selectedOs?.id === os.id
                     ? "bg-[#10a37f] border-[#10a37f] text-white"
                     : "bg-[#2f2f2f] border-[#3a3a3a] text-[#ececec] hover:border-[#10a37f]"
                 }`}
@@ -175,9 +208,17 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
 
         <div className="flex flex-col gap-2 text-sm">
           <div className="flex justify-between">
-            <span className="text-[#8e8ea0]">ОС</span>
-            <span className="text-[#ececec] font-medium">{selectedOs.full_name}</span>
+            <span className="text-[#8e8ea0]">{isMarketplace ? "ПО" : "ОС"}</span>
+            <span className="text-[#ececec] font-medium">
+              {isMarketplace ? selectedSoftware?.full_name : selectedOs?.full_name}
+            </span>
           </div>
+          {isMarketplace && selectedSoftware?.os_label && (
+            <div className="flex justify-between">
+              <span className="text-[#8e8ea0]">Базовая ОС</span>
+              <span className="text-[#ececec] font-medium">{selectedSoftware.os_label}</span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-[#8e8ea0]">Тариф</span>
             <span className="text-[#ececec] font-medium">{selectedPreset.description}</span>

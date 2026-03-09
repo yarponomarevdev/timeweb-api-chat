@@ -9,6 +9,7 @@ export interface ServerSummary {
   status_label: string;
   os: string;
   os_version: string;
+  software?: string;
   cpu: number;
   ram_mb: number;
   disk_gb: number;
@@ -92,6 +93,7 @@ export function createServerTools(token: string) {
           status_label: tw.getStatusLabel(s.status),
           os: s.os?.name ?? "—",
           os_version: s.os?.version ?? "",
+          software: s.software?.name ?? undefined,
           cpu: s.cpu,
           ram_mb: s.ram,
           disk_gb: tw.getServerDiskGB(s),
@@ -114,6 +116,7 @@ export function createServerTools(token: string) {
           status_label: tw.getStatusLabel(s.status),
           os: s.os?.name ?? "—",
           os_version: s.os?.version ?? "",
+          software: s.software?.name ?? undefined,
           cpu: s.cpu,
           ram_mb: s.ram,
           disk_gb: tw.getServerDiskGB(s),
@@ -127,15 +130,20 @@ export function createServerTools(token: string) {
 
     create_server: tool({
       description:
-        "Создать новый облачный сервер. Перед созданием используй list_presets и list_os для получения актуальных ID тарифов и ОС",
-      inputSchema: z.object({
-        name: z.string().describe("Имя сервера (максимум 255 символов)"),
-        os_id: z.number().describe("ID операционной системы из list_os"),
-        preset_id: z.number().describe("ID тарифа из list_presets"),
-        comment: z.string().optional().describe("Комментарий к серверу"),
-        availability_zone: z.string().optional().describe("Зона размещения, например ru-1, ru-2, pl-1, nl-1, kz-1"),
-      }),
-      execute: async ({ name, os_id, preset_id, comment, availability_zone }) => {
+        "Создать новый облачный сервер. Для обычного сервера передай os_id, для сервера из маркетплейса передай software_id.",
+      inputSchema: z
+        .object({
+          name: z.string().describe("Имя сервера (максимум 255 символов)"),
+          os_id: z.number().optional().describe("ID операционной системы из list_os"),
+          software_id: z.number().optional().describe("ID ПО из software(action: 'list')"),
+          preset_id: z.number().describe("ID тарифа из list_presets"),
+          comment: z.string().optional().describe("Комментарий к серверу"),
+          availability_zone: z.string().optional().describe("Зона размещения, например ru-1, ru-2, pl-1, nl-1, kz-1"),
+        })
+        .refine((v) => v.os_id != null || v.software_id != null, {
+          message: "Нужно передать os_id или software_id",
+        }),
+      execute: async ({ name, os_id, software_id, preset_id, comment, availability_zone }) => {
         const presets = await tw.listPresets(token);
         const preset = presets.find((p) => p.id === preset_id);
         const bandwidth = preset?.bandwidth ?? 1000;
@@ -143,6 +151,7 @@ export function createServerTools(token: string) {
         const server = await tw.createServer(token, {
           name,
           os_id,
+          software_id,
           preset_id,
           bandwidth,
           comment,
@@ -162,6 +171,7 @@ export function createServerTools(token: string) {
           status: server.status,
           status_label: tw.getStatusLabel(server.status),
           os: server.os?.name ?? "—",
+          software: server.software?.name ?? undefined,
           cpu: server.cpu,
           ram_mb: server.ram,
           disk_gb: tw.getServerDiskGB(server),

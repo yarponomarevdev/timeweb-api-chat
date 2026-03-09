@@ -14,28 +14,34 @@ import { QuickViewPanel } from "./quick-view-panel";
 import { ServerCard } from "./server-card";
 import { useTimeweb } from "@/hooks/use-timeweb";
 import { Sidebar } from "./sidebar";
-
-const STORAGE_KEY = "chat_messages";
-
-function loadMessages(): UIMessage[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? (JSON.parse(saved) as UIMessage[]) : [];
-  } catch {
-    return [];
-  }
-}
+import type { ChatSession } from "@/lib/chat-store";
 
 interface ChatProps {
   timewebToken: string;
   openaiKey: string;
   onChangeToken: () => void;
+  initialMessages: UIMessage[];
+  sessionId: string | null;
+  sessions: ChatSession[];
+  onNewChat: () => void;
+  onSwitchSession: (id: string) => UIMessage[];
+  onDeleteSession: (id: string) => void;
+  onSessionUpdate: (sessionId: string | null, messages: UIMessage[]) => void;
 }
 
 
-export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
-  const [initialMessages] = useState<UIMessage[]>(loadMessages);
+export function Chat({
+  timewebToken,
+  openaiKey,
+  onChangeToken,
+  initialMessages,
+  sessionId,
+  sessions,
+  onNewChat,
+  onSwitchSession,
+  onDeleteSession,
+  onSessionUpdate,
+}: ChatProps) {
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [retryAfter, setRetryAfter] = React.useState<number>(0);
 
@@ -54,7 +60,6 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
     messages: initialMessages,
     onError: (err) => {
       const msg = err instanceof Error ? err.message : String(err);
-      // Пробуем извлечь Retry-After из текста ошибки (SDK может его прокинуть)
       const retryMatch = msg.match(/Retry-After[:\s]+(\d+)/i);
       if (retryMatch) setRetryAfter(Number(retryMatch[1]));
 
@@ -144,25 +149,19 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  // true = следить за новыми сообщениями; false = пользователь прокрутил вверх
   const shouldFollow = useRef(true);
 
-  // Сохраняем сообщения в localStorage при каждом изменении
+  // Сохраняем сообщения через колбэк родителя
   useEffect(() => {
     if (messages.length > 0) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(messages));
-      } catch {
-        // ignore quota errors
-      }
+      onSessionUpdate(sessionId, messages);
     }
-  }, [messages]);
+  }, [messages, sessionId, onSessionUpdate]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "instant" });
   }, []);
 
-  // Слушаем ручную прокрутку: если ушли вверх — отключаем следование
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -174,7 +173,6 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
     return () => el.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Скроллим вниз при каждом новом сообщении или стриминге
   useEffect(() => {
     if (shouldFollow.current) scrollToBottom();
   }, [messages, isLoading, scrollToBottom]);
@@ -199,12 +197,7 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
   };
 
   const handleNewChat = () => {
-    setMessages([]);
-    try {
-      localStorage.removeItem(STORAGE_KEY);
-    } catch {
-      // ignore
-    }
+    onNewChat();
   };
 
   const handleRetry = (messageIndex: number, messageText: string) => {
@@ -224,6 +217,10 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
           onAction={handleQuickAction}
           onNewChat={handleNewChat}
           onChangeToken={onChangeToken}
+          sessions={sessions}
+          activeSessionId={sessionId}
+          onSwitchSession={onSwitchSession}
+          onDeleteSession={onDeleteSession}
         />
       </div>
 
@@ -236,6 +233,10 @@ export function Chat({ timewebToken, openaiKey, onChangeToken }: ChatProps) {
               onNewChat={handleNewChat}
               onChangeToken={onChangeToken}
               onClose={() => setSidebarOpen(false)}
+              sessions={sessions}
+              activeSessionId={sessionId}
+              onSwitchSession={onSwitchSession}
+              onDeleteSession={onDeleteSession}
             />
           </div>
           <div

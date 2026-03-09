@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import * as tw from "@/lib/timeweb";
+import type { SoftwareOption } from "./software";
 
 export interface OsOption {
   id: number;
@@ -28,10 +29,13 @@ export interface LocationOption {
 }
 
 export interface ProposeServerOutput {
+  mode?: "os" | "software";
   server_name: string;
   preset: PresetSummary;
-  selected_os: OsOption;
+  selected_os?: OsOption;
   available_os: OsOption[];
+  selected_software?: SoftwareOption;
+  available_software?: SoftwareOption[];
   available_presets: PresetSummary[];
   selected_location: string;
   available_locations: LocationOption[];
@@ -143,6 +147,119 @@ export function createPresetTools(token: string) {
           selected_location: "ru-1",
           available_locations: availableLocations,
         };
+      },
+    }),
+    propose_marketplace_server: tool({
+      description:
+        "Подготовить конфигурацию сервера с ПО из маркетплейса. Используй, когда пользователь просит OpenClaw, Docker, WordPress и другое ПО из маркетплейса.",
+      inputSchema: z.object({
+        name: z.string().describe("Имя будущего сервера"),
+        software_query: z.string().describe("Название ПО из маркетплейса, например OpenClaw, Docker, WordPress"),
+        ram_mb: z
+          .number()
+          .optional()
+          .describe("Желаемый размер RAM в МБ. Если не указан, берётся минимум для ПО или 2048"),
+      }),
+      execute: async ({ name, software_query, ram_mb }) => {
+        const [presets, softwareList] = await Promise.all([
+          tw.listPresets(token),
+          tw.listSoftware(token),
+        ]);
+
+        const query = software_query.toLowerCase().trim();
+        const matchingSoftware = softwareList.filter((item) =>
+          [item.name, item.category, item.description]
+            .filter(Boolean)
+            .some((value) => String(value).toLowerCase().includes(query))
+        );
+
+        const selectedSoftware = (matchingSoftware[0] ?? softwareList[0]);
+        if (!selectedSoftware) {
+          throw new Error("В маркетплейсе не найдено подходящее ПО");
+        }
+
+        const requiredRam = Math.max(ram_mb ?? 2048, selectedSoftware.requirements?.min_ram ?? 0);
+        const requiredDisk = selectedSoftware.requirements?.min_disk ?? 0;
+
+        const matchingPresets = presets.filter(
+          (p) => p.ram >= requiredRam && p.disk >= requiredDisk
+        );
+        const preset = (matchingPresets.length > 0 ? matchingPresets : presets)
+          .sort((a, b) => a.price - b.price)[0];
+
+        const availablePresets = presets
+          .filter((p) => p.ram >= requiredRam && p.disk >= requiredDisk)
+          .sort((a, b) => a.ram - b.ram || a.disk - b.disk || a.price - b.price)
+          .map((p) => ({
+            id: p.id,
+            description: p.description_short || p.description,
+            cpu: p.cpu,
+            ram_mb: p.ram,
+            ram_gb: Math.round(p.ram / 1024),
+            disk_gb: Math.round(p.disk / 1024),
+            price_per_month: p.price,
+            bandwidth: p.bandwidth,
+          }));
+
+        const availableLocations: LocationOption[] = [
+          { code: "ru-1", city: "Москва", country: "Россия", flag: "🇷🇺" },
+          { code: "ru-2", city: "Санкт-Петербург", country: "Россия", flag: "🇷🇺" },
+          { code: "pl-1", city: "Варшава", country: "Польша", flag: "🇵🇱" },
+          { code: "nl-1", city: "Амстердам", country: "Нидерланды", flag: "🇳🇱" },
+          { code: "kz-1", city: "Алматы", country: "Казахстан", flag: "🇰🇿" },
+        ];
+
+        return {
+          mode: "software",
+          server_name: name,
+          preset: {
+            id: preset.id,
+            description: preset.description_short || preset.description,
+            cpu: preset.cpu,
+            ram_mb: preset.ram,
+            ram_gb: Math.round(preset.ram / 1024),
+            disk_gb: Math.round(preset.disk / 1024),
+            price_per_month: preset.price,
+            bandwidth: preset.bandwidth,
+          },
+          available_os: [],
+          selected_software: {
+            id: selectedSoftware.id,
+            name: selectedSoftware.name,
+            full_name: selectedSoftware.name,
+            category: selectedSoftware.category ?? undefined,
+            description: selectedSoftware.description ?? undefined,
+            os_label: selectedSoftware.os
+              ? [selectedSoftware.os.name, selectedSoftware.os.version].filter(Boolean).join(" ")
+              : undefined,
+            min_ram_mb: selectedSoftware.requirements?.min_ram,
+            min_disk_gb: selectedSoftware.requirements?.min_disk,
+          },
+          available_software: matchingSoftware.map((item) => ({
+            id: item.id,
+            name: item.name,
+            full_name: item.name,
+            category: item.category ?? undefined,
+            description: item.description ?? undefined,
+            os_label: item.os ? [item.os.name, item.os.version].filter(Boolean).join(" ") : undefined,
+            min_ram_mb: item.requirements?.min_ram,
+            min_disk_gb: item.requirements?.min_disk,
+          })),
+          available_presets: availablePresets.length > 0
+            ? availablePresets
+            : [{
+                id: preset.id,
+                description: preset.description_short || preset.description,
+                cpu: preset.cpu,
+                ram_mb: preset.ram,
+                ram_gb: Math.round(preset.ram / 1024),
+                disk_gb: Math.round(preset.disk / 1024),
+                price_per_month: preset.price,
+                bandwidth: preset.bandwidth,
+              }],
+          selected_location: "ru-1",
+          available_locations: availableLocations,
+        } satisfies ProposeServerOutput;
       },
     }),
 

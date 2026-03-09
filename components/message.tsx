@@ -58,6 +58,8 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
   list_presets: ["Создай сервер", "Создать сервер на 4GB RAM", "Покажи список ОС"],
   list_os: ["Создать сервер", "Показать тарифы"],
   propose_server: ["Покажи другие тарифы", "Покажи список ОС", "Показать мои серверы"],
+  software: ["Покажи ПО из маркетплейса", "Создай сервер с OpenClaw", "Создай сервер с Docker"],
+  propose_marketplace_server: ["Покажи ПО из маркетплейса", "Покажи другие тарифы", "Показать мои серверы"],
 
   // Баланс
   get_balance: ["Создать сервер", "Показать мои серверы", "Показать тарифы"],
@@ -156,6 +158,7 @@ const RICH_TOOL_OUTPUTS = new Set([
   "list_ssh_keys",
   "list_backups",
   "list_firewalls",
+  "software",
   "get_balance",
   "get_server_stats",
   "k8s_clusters",
@@ -181,6 +184,7 @@ const RICH_TOOL_OUTPUTS = new Set([
   "domains",
   "databases",
   "buckets",
+  "propose_marketplace_server",
 ]);
 
 export function Message({ message, onRetry, onSendMessage, timewebToken, showSuggestions = true }: MessageProps) {
@@ -345,7 +349,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                   );
                 }
 
-                if (toolName === "propose_server") {
+                if (toolName === "propose_server" || toolName === "propose_marketplace_server") {
                   const output = part.output as ProposeServerOutput;
                   return (
                     <ServerCreateForm
@@ -687,7 +691,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                     toolName === "apps" || toolName === "app_deploys" ||
                     toolName === "virtual_routers" || toolName === "timeweb_api_universal" ||
                     toolName === "domains" || toolName === "databases" ||
-                    toolName === "buckets") {
+                    toolName === "buckets" || toolName === "software") {
                   const raw = part.output;
 
                   // Tool вернул массив напрямую

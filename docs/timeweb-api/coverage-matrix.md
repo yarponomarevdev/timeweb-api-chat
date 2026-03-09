@@ -12,6 +12,7 @@
 |---|---|---|---|---|
 | servers | yes | yes | yes | Полный operational flow включая backups/stats |
 | presets/os/balance | yes | yes | yes | Включая `propose_server` |
+| software | yes | yes | yes | Marketplace software + propose_marketplace_server |
 | ssh_keys | yes | yes | yes | CRUD |
 | firewalls | yes | yes | yes | group + rules + attach |
 | domains | yes | partial | yes | Только list |

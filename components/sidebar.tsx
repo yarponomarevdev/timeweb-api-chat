@@ -25,7 +25,11 @@ import {
   Mail,
   Layers,
   ChevronDown,
+  MessageSquare,
+  Trash2,
 } from "lucide-react";
+import type { ChatSession } from "@/lib/chat-store";
+import { relativeTime } from "@/lib/chat-store";
 
 interface Action {
   label: string;
@@ -201,9 +205,13 @@ interface SidebarProps {
   onNewChat: () => void;
   onChangeToken: () => void;
   onClose?: () => void;
+  sessions?: ChatSession[];
+  activeSessionId?: string | null;
+  onSwitchSession?: (id: string) => void;
+  onDeleteSession?: (id: string) => void;
 }
 
-export function Sidebar({ onAction, onNewChat, onChangeToken, onClose }: SidebarProps) {
+export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions, activeSessionId, onSwitchSession, onDeleteSession }: SidebarProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const handleAction = (message: string) => {
@@ -245,6 +253,41 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose }: Sidebar
           Новый чат
         </button>
       </div>
+
+      {/* История чатов */}
+      {sessions && sessions.length > 0 && (
+        <div className="px-2 pb-1 flex-shrink-0">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-[#666] uppercase tracking-wider font-medium">
+            <MessageSquare size={11} />
+            История
+          </div>
+          <div className="max-h-48 overflow-y-auto scrollbar-thin">
+            {sessions.map((session) => (
+              <div
+                key={session.id}
+                className={`group flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg text-[13px] transition-colors cursor-pointer ${
+                  activeSessionId === session.id
+                    ? "bg-[#2a2a2a] text-[#ececec]"
+                    : "text-[#a0a0b0] hover:text-[#ececec] hover:bg-[#232323]"
+                }`}
+                onClick={() => { onSwitchSession?.(session.id); onClose?.(); }}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="truncate text-[13px]">{session.title}</div>
+                  <div className="text-[11px] text-[#666]">{relativeTime(session.updatedAt)}</div>
+                </div>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onDeleteSession?.(session.id); }}
+                  className="flex-shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[#3a3a3a] text-[#666] hover:text-red-400 transition-all"
+                >
+                  <Trash2 size={12} />
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="mx-2 my-1.5 border-b border-[#2a2a2a]" />
+        </div>
+      )}
 
       {/* Категории — скроллируемая область */}
       <div className="flex-1 overflow-y-auto min-h-0 px-2 py-1 scrollbar-thin">

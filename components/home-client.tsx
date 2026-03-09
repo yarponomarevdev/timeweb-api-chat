@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Chat } from "@/components/chat";
 import { ApiKeySetup } from "@/components/api-key-setup";
+import { useChatSessions } from "@/hooks/use-chat-sessions";
 
 const TIMEWEB_KEY = "timeweb_api_key";
 const OPENAI_KEY = "openai_api_key";
@@ -14,8 +15,30 @@ export default function HomeClient() {
   const [openaiKey, setOpenaiKey] = useState<string>(
     () => localStorage.getItem(OPENAI_KEY) ?? ""
   );
-  // Показывать форму ключей поверх чата (без сброса ключей)
   const [showKeySetup, setShowKeySetup] = useState(false);
+  const [mountKey, setMountKey] = useState(0);
+
+  const {
+    sessions,
+    activeSessionId,
+    initialMessages,
+    switchSession,
+    startNewSession,
+    removeSession,
+    updateSession,
+  } = useChatSessions();
+
+  const handleSwitchSession = (id: string) => {
+    if (id === activeSessionId) return [];
+    const msgs = switchSession(id);
+    setMountKey((k) => k + 1);
+    return msgs;
+  };
+
+  const handleNewChat = () => {
+    startNewSession();
+    setMountKey((k) => k + 1);
+  };
 
   const handleSave = (tw: string, oai: string) => {
     localStorage.setItem(TIMEWEB_KEY, tw);
@@ -58,10 +81,17 @@ export default function HomeClient() {
 
   return (
     <Chat
-      key={timewebToken}
+      key={`${timewebToken}-${mountKey}`}
       timewebToken={timewebToken}
       openaiKey={openaiKey}
       onChangeToken={handleChangeToken}
+      initialMessages={initialMessages}
+      sessionId={activeSessionId}
+      sessions={sessions}
+      onNewChat={handleNewChat}
+      onSwitchSession={handleSwitchSession}
+      onDeleteSession={removeSession}
+      onSessionUpdate={updateSession}
     />
   );
 }

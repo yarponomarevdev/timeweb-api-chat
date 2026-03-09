@@ -1,10 +1,10 @@
 {
-  "checkedAt": "2026-03-09T13:39:41.482Z",
+  "checkedAt": "2026-03-09T13:54:23.728Z",
   "totals": {
     "publicApiMethodsClaimedByProvider": 126,
-    "clientFunctions": 114,
-    "tools": 54,
-    "coveredDomains": 20,
+    "clientFunctions": 116,
+    "tools": 56,
+    "coveredDomains": 21,
     "missingDomains": 0
   },
   "toolNames": [
@@ -54,11 +54,13 @@
     "network_drives",
     "project_resources",
     "projects",
+    "propose_marketplace_server",
     "propose_server",
     "reboot_server_hard",
     "resize_server",
     "restore_backup",
     "server_action",
+    "software",
     "timeweb_api_universal",
     "virtual_routers",
     "vpcs"
@@ -132,6 +134,7 @@
     "getRegistry",
     "getServer",
     "getServerStats",
+    "getSoftware",
     "getVPC",
     "getVirtualRouter",
     "listAPIKeys",
@@ -167,6 +170,7 @@
     "listRegistries",
     "listSSHKeys",
     "listServers",
+    "listSoftware",
     "listVPCServices",
     "listVPCs",
     "listVirtualRouters",

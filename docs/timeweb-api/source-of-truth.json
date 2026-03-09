@@ -37,6 +37,14 @@
       ]
     },
     {
+      "name": "software",
+      "basePath": "/software",
+      "methods": [
+        "GET /software",
+        "GET /software/{id}"
+      ]
+    },
+    {
       "name": "ssh_keys",
       "basePath": "/ssh-keys",
       "methods": [

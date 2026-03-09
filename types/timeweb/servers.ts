@@ -101,6 +101,7 @@ export interface TimewebFinances {
 export interface TimewebCreateServerParams {
   name: string;
   os_id?: number;
+  software_id?: number;
   preset_id?: number;
   bandwidth?: number;
   comment?: string;

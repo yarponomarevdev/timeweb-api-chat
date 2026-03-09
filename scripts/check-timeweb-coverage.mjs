@@ -57,6 +57,7 @@ const clientFunctions = collectClientFunctions(clientFiles);
 const expectedDomainTools = {
   servers: ["list_servers", "get_server", "create_server", "delete_server", "server_action"],
   presets_os_balance: ["list_presets", "list_os", "get_balance", "propose_server"],
+  software: ["software", "propose_marketplace_server"],
   ssh_keys: ["list_ssh_keys", "create_ssh_key", "delete_ssh_key"],
   firewall: ["list_firewalls", "create_firewall", "delete_firewall", "add_firewall_rule"],
   domains: ["list_domains", "domains"],
