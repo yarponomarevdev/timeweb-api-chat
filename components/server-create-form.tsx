@@ -149,7 +149,6 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
                     : "bg-[#2f2f2f] border-[#3a3a3a] text-[#8e8ea0] hover:border-[#555] hover:text-[#ececec]"
                 }`}
               >
-                <span className="text-xl leading-none">{loc.flag}</span>
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate leading-tight">{loc.city}</span>
                   <span className="text-[10px] text-[#555] truncate">{loc.country}</span>
@@ -192,7 +191,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
           <div className="flex justify-between">
             <span className="text-[#8e8ea0]">Локация</span>
             <span className="text-[#ececec] font-medium">
-              {selectedLocation.flag} {selectedLocation.city}
+              {selectedLocation.city}
             </span>
           </div>
           <div className="flex justify-between mt-1">
