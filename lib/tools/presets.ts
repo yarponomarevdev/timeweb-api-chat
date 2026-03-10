@@ -295,7 +295,7 @@ export function createPresetTools(token: string) {
           cpu: p.cpu,
           ram_mb: p.ram,
           ram_gb: Math.round(p.ram / 1024),
-          disk_gb: p.disk,
+          disk_gb: Math.round(p.disk / 1024),
           bandwidth: p.bandwidth,
           price_per_month: p.price,
           description: p.description_short || p.description,

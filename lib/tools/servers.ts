@@ -185,11 +185,13 @@ export function createServerTools(token: string) {
           status: server.status,
           status_label: tw.getStatusLabel(server.status),
           os: server.os?.name ?? "—",
+          os_version: server.os?.version ?? "",
           software: server.software?.name ?? undefined,
           cpu: server.cpu,
           ram_mb: server.ram,
           disk_gb: tw.getServerDiskGB(server),
           created_at: server.created_at,
+          location: availability_zone ?? finalPreset?.location ?? server.location,
           message: "Сервер создаётся, обычно занимает 1–3 минуты",
         };
       },

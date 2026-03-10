@@ -441,7 +441,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                             <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
                               <td className="px-4 py-2.5 font-mono text-[#8e8ea0]">{k.id}</td>
                               <td className="px-4 py-2.5 font-medium">{k.name}</td>
-                              <td className="px-4 py-2.5 font-mono text-xs text-[#8e8ea0] truncate max-w-[200px]">{k.fingerprint}</td>
+                              <td className="px-4 py-2.5 font-mono text-xs text-[#8e8ea0] truncate max-w-[200px]">{k.fingerprint || "—"}</td>
                             </tr>
                           ))}
                         </tbody>

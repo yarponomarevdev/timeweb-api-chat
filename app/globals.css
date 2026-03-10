@@ -47,9 +47,10 @@ body {
 }
 
 /* Custom scrollbar */
-::-webkit-scrollbar { width: 6px; height: 0; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #3a3a3a; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #4a4a4a; }
 
 /* Более заметный скроллбар для сайдбара */
 .sidebar-scroll { scrollbar-width: thin; scrollbar-color: #555 transparent; }
@@ -97,4 +98,51 @@ body {
 .prose-chat a {
   color: #10a37f;
   text-decoration: underline;
+}
+.prose-chat h1,
+.prose-chat h2,
+.prose-chat h3 {
+  color: #ececec;
+  font-weight: 600;
+  margin-bottom: 0.5em;
+  margin-top: 1em;
+  line-height: 1.3;
+}
+.prose-chat h1 { font-size: 1.25em; }
+.prose-chat h2 { font-size: 1.1em; }
+.prose-chat h3 { font-size: 1em; }
+.prose-chat h1:first-child,
+.prose-chat h2:first-child,
+.prose-chat h3:first-child { margin-top: 0; }
+.prose-chat strong { color: #ececec; font-weight: 600; }
+.prose-chat em { color: #c0c0cc; font-style: italic; }
+.prose-chat blockquote {
+  border-left: 3px solid #3a3a3a;
+  padding-left: 1em;
+  color: #8e8ea0;
+  margin: 0.75em 0;
+}
+.prose-chat table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1em 0;
+  font-size: 0.9em;
+}
+.prose-chat th {
+  background: #171717;
+  color: #8e8ea0;
+  font-weight: 600;
+  padding: 0.5em 0.75em;
+  text-align: left;
+  border-bottom: 1px solid #3a3a3a;
+}
+.prose-chat td {
+  padding: 0.5em 0.75em;
+  border-bottom: 1px solid #2a2a2a;
+}
+.prose-chat tr:last-child td { border-bottom: none; }
+.prose-chat hr {
+  border: none;
+  border-top: 1px solid #3a3a3a;
+  margin: 1em 0;
 }

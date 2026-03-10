@@ -19,6 +19,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
     locations.find((l) => l.code === data.selected_location) ?? locations[0]
   );
   const [isCreating, setIsCreating] = useState(false);
+  const [isDone, setIsDone] = useState(false);
   const { server_name, available_os, available_presets, available_software = [] } = data;
   const available_locations = locations;
 
@@ -70,9 +71,9 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   };
 
   const handleCreate = () => {
-    if (isCreating) return;
+    if (isCreating || isDone) return;
     setIsCreating(true);
-    setTimeout(() => setIsCreating(false), 3000);
+    setIsDone(true);
 
     if (isMarketplace && selectedSoftware) {
       onConfirm(
@@ -88,8 +89,14 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
     );
   };
 
+  const handleCancel = () => {
+    if (isDone) return;
+    setIsDone(true);
+    onConfirm("Отменяю создание сервера");
+  };
+
   return (
-    <div className="my-2 flex flex-col gap-3 max-w-sm">
+    <div className="my-2 flex flex-col gap-3 w-full">
       {/* Выбор CPU */}
       {uniqueCpuLevels.length > 1 && (
         <div className="flex flex-col gap-1.5">
@@ -217,7 +224,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
               >
                 <div className="flex flex-col min-w-0">
                   <span className="text-sm font-medium truncate leading-tight">{loc.city}</span>
-                  <span className="text-[10px] text-[#555] truncate">{loc.country}</span>
+                  <span className="text-[10px] text-[#8e8ea0] truncate">{loc.country}</span>
                 </div>
               </button>
             ))}
@@ -277,14 +284,23 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
         </div>
       </div>
 
-      {/* Кнопка создания */}
-      <button
-        onClick={handleCreate}
-        disabled={isCreating}
-        className="w-full bg-[#10a37f] hover:bg-[#0d8f6f] disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-xl transition-colors text-sm"
-      >
-        {isCreating ? "Создаётся..." : "Создать сервер"}
-      </button>
+      {/* Кнопки действий */}
+      <div className="flex gap-2">
+        <button
+          onClick={handleCancel}
+          disabled={isDone}
+          className="flex-1 bg-[#2f2f2f] hover:bg-[#3a3a3a] disabled:opacity-60 disabled:cursor-not-allowed text-[#8e8ea0] font-medium py-2.5 px-4 rounded-xl transition-colors text-sm border border-[#3a3a3a]"
+        >
+          Отмена
+        </button>
+        <button
+          onClick={handleCreate}
+          disabled={isDone}
+          className="flex-[2] bg-[#10a37f] hover:bg-[#0d8f6f] disabled:opacity-60 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-xl transition-colors text-sm"
+        >
+          {isCreating ? "Создаётся..." : "Создать сервер"}
+        </button>
+      </div>
     </div>
   );
 }

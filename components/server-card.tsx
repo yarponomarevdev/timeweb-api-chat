@@ -138,7 +138,7 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
   const ramGb = server.ram_mb != null ? Math.round(server.ram_mb / 1024) : null;
 
   return (
-    <div className="bg-[#252525] rounded-2xl border border-[#333] flex flex-col my-2 max-w-sm overflow-hidden">
+    <div className="bg-[#252525] rounded-2xl border border-[#333] flex flex-col my-2 w-full max-w-sm overflow-hidden">
       {/* Header */}
       <div className="flex items-start justify-between px-4 pt-4 pb-3 gap-2">
         <div className="flex items-center min-w-0">
@@ -162,21 +162,21 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
             <div className="bg-[#252525] flex flex-col items-center gap-1 py-3 px-2">
               <Cpu size={14} className="text-[#10a37f]" />
               <span className="text-sm font-medium text-[#ececec]">{cpuLabel(server.cpu)}</span>
-              <span className="text-[10px] text-[#555] uppercase tracking-wide">CPU</span>
+              <span className="text-[10px] text-[#8e8ea0] uppercase tracking-wide">CPU</span>
             </div>
           )}
           {ramGb != null && (
             <div className="bg-[#252525] flex flex-col items-center gap-1 py-3 px-2">
               <MemoryStick size={14} className="text-[#10a37f]" />
               <span className="text-sm font-medium text-[#ececec]">{ramGb} ГБ</span>
-              <span className="text-[10px] text-[#555] uppercase tracking-wide">RAM</span>
+              <span className="text-[10px] text-[#8e8ea0] uppercase tracking-wide">RAM</span>
             </div>
           )}
           {server.disk_gb != null && (
             <div className="bg-[#252525] flex flex-col items-center gap-1 py-3 px-2">
               <HardDrive size={14} className="text-[#10a37f]" />
               <span className="text-sm font-medium text-[#ececec]">{server.disk_gb} ГБ</span>
-              <span className="text-[10px] text-[#555] uppercase tracking-wide">Диск</span>
+              <span className="text-[10px] text-[#8e8ea0] uppercase tracking-wide">Диск</span>
             </div>
           )}
         </div>
@@ -191,14 +191,14 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
               <span className="text-sm font-medium text-[#ececec] text-center leading-tight">
                 {server.os} {server.os_version}
               </span>
-              <span className="text-[10px] text-[#555] uppercase tracking-wide">ОС</span>
+              <span className="text-[10px] text-[#8e8ea0] uppercase tracking-wide">ОС</span>
             </div>
           )}
           {server.location && (
             <div className="bg-[#252525] flex flex-col items-center gap-1 py-3 px-2">
               <MapPin size={14} className="text-[#10a37f]" />
               <span className="text-sm font-medium text-[#ececec]">{locationLabel(server.location)}</span>
-              <span className="text-[10px] text-[#555] uppercase tracking-wide">Локация</span>
+              <span className="text-[10px] text-[#8e8ea0] uppercase tracking-wide">Локация</span>
             </div>
           )}
         </div>
@@ -208,7 +208,7 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
       {mainIp && (
         <button
           onClick={handleCopyIp}
-          className="flex items-center justify-between px-4 py-2 text-xs text-[#666] hover:bg-[#2a2a2a] transition-colors group border-b border-[#2e2e2e]"
+          className="flex items-center justify-between px-4 py-2 text-xs text-[#8e8ea0] hover:bg-[#2a2a2a] transition-colors group border-b border-[#2e2e2e]"
         >
           <span className="font-mono group-hover:text-[#ececec] transition-colors">{mainIp}</span>
           {copied
@@ -326,7 +326,7 @@ function ActionButton({ icon, label, onClick, variant = "default", fullWidth }: 
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center gap-1.5 text-xs py-2.5 transition-colors ${colors[variant]} ${fullWidth ? "flex-1" : "px-3"}`}
+      className={`flex items-center justify-center gap-1.5 text-xs py-2.5 px-3 transition-colors ${colors[variant]} ${fullWidth ? "flex-1" : ""}`}
     >
       {icon}
       {label}

@@ -107,9 +107,9 @@ export function ToolCallLog({ messages }: ToolCallLogProps) {
                 <StatusIcon state={call.state} />
                 <span className="flex-1 text-[#c0c0c8]">{call.label}</span>
                 {expandedId === call.id ? (
-                  <ChevronDown size={10} className="text-[#555] flex-shrink-0" />
+                  <ChevronDown size={10} className="text-[#8e8ea0] flex-shrink-0" />
                 ) : (
-                  <ChevronRight size={10} className="text-[#555] flex-shrink-0" />
+                  <ChevronRight size={10} className="text-[#8e8ea0] flex-shrink-0" />
                 )}
               </button>
 
@@ -118,7 +118,7 @@ export function ToolCallLog({ messages }: ToolCallLogProps) {
                 <div className="px-4 pb-3 flex flex-col gap-2">
                   {call.input && Object.keys(call.input).length > 0 && (
                     <div>
-                      <div className="text-[10px] text-[#555] uppercase tracking-wide mb-1">
+                      <div className="text-[10px] text-[#8e8ea0] uppercase tracking-wide mb-1">
                         Параметры
                       </div>
                       <pre className="text-[11px] text-[#8e8ea0] bg-[#141414] rounded-lg p-2 overflow-x-auto whitespace-pre-wrap">
@@ -128,7 +128,7 @@ export function ToolCallLog({ messages }: ToolCallLogProps) {
                   )}
                   {call.output !== undefined && (
                     <div>
-                      <div className="text-[10px] text-[#555] uppercase tracking-wide mb-1">
+                      <div className="text-[10px] text-[#8e8ea0] uppercase tracking-wide mb-1">
                         Результат
                       </div>
                       <pre className="text-[11px] text-[#8e8ea0] bg-[#141414] rounded-lg p-2 overflow-x-auto whitespace-pre-wrap max-h-40">

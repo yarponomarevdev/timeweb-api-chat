@@ -272,7 +272,7 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
       {/* История чатов */}
       {sessions && sessions.length > 0 && (
         <div className="px-2 pb-1 flex-shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-[#666] uppercase tracking-wider font-medium">
+          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-[#8e8ea0] uppercase tracking-wider font-medium">
             <MessageSquare size={11} />
             История
           </div>
@@ -289,11 +289,11 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
               >
                 <div className="flex-1 min-w-0">
                   <div className="truncate text-[13px]">{session.title}</div>
-                  <div className="text-[11px] text-[#666]">{relativeTime(session.updatedAt)}</div>
+                  <div className="text-[11px] text-[#6e6e80]">{relativeTime(session.updatedAt)}</div>
                 </div>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDeleteSession?.(session.id); }}
-                  className="flex-shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[#3a3a3a] text-[#666] hover:text-red-400 transition-all"
+                  className="flex-shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[#3a3a3a] text-[#8e8ea0] hover:text-red-400 transition-all"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -324,7 +324,7 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
               </span>
               <ChevronDown
                 size={12}
-                className={`flex-shrink-0 text-[#555] transition-transform ${
+                className={`flex-shrink-0 text-[#8e8ea0] transition-transform ${
                   expandedIndex === i ? "rotate-180" : ""
                 }`}
               />
