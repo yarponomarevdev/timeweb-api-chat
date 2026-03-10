@@ -300,7 +300,7 @@ export function Chat({
             <motion.div
               key="messages"
               ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto min-h-0"
+              className="flex-1 overflow-y-auto min-h-0 bg-[#212121]"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
