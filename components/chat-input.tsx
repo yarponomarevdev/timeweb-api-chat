@@ -1,28 +1,31 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Eraser } from "lucide-react";
 
 interface ChatInputProps {
   input: string;
   isLoading: boolean;
   onInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: (e: React.FormEvent) => void;
+  hasMessages?: boolean;
+  onClear?: () => void;
+  isCentered?: boolean;
 }
 
-export function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInputProps) {
+export function ChatInput({ input, isLoading, onInputChange, onSubmit, hasMessages, onClear, isCentered }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const el = textareaRef.current;
     if (el) {
       el.style.height = "auto";
-      const newHeight = Math.min(el.scrollHeight, 200);
+      const maxHeight = isCentered ? 300 : 200;
+      const newHeight = Math.min(el.scrollHeight, maxHeight);
       el.style.height = `${newHeight}px`;
-      // Скрываем scroll indicator пока контент не достиг max-height
-      el.style.overflowY = newHeight >= 200 ? "auto" : "hidden";
+      el.style.overflowY = newHeight >= maxHeight ? "auto" : "hidden";
     }
-  }, [input]);
+  }, [input, isCentered]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -38,13 +41,24 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit }: ChatInp
       onSubmit={onSubmit}
       className="relative flex items-end w-full max-w-3xl mx-auto bg-[#2f2f2f] border border-[#3a3a3a] rounded-2xl p-2 shadow-lg"
     >
+      {hasMessages && onClear && (
+        <button
+          type="button"
+          onClick={onClear}
+          title="Очистить чат"
+          className="mb-1 p-2 rounded-xl text-[#555] hover:text-[#8e8ea0] hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
+        >
+          <Eraser size={18} />
+        </button>
+      )}
       <textarea
         ref={textareaRef}
         value={input}
         onChange={onInputChange}
         onKeyDown={handleKeyDown}
         placeholder="Напишите запрос..."
-        className="w-full max-h-[200px] bg-transparent text-[#ececec] placeholder-[#8e8ea0] resize-none focus:outline-none p-2 no-scrollbar"
+        className="w-full bg-transparent text-[#ececec] placeholder-[#8e8ea0] resize-none focus:outline-none p-2 no-scrollbar"
+        style={{ minHeight: isCentered ? "80px" : undefined, maxHeight: isCentered ? "300px" : "200px" }}
         rows={1}
         disabled={isLoading}
       />
