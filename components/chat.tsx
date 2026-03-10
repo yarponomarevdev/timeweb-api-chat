@@ -156,7 +156,7 @@ export function Chat({
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [hasMessages]);
 
   useEffect(() => {
     if (shouldFollow.current) scrollToBottom();
@@ -408,11 +408,7 @@ export function Chat({
 
               {/* Чипы */}
               <div className="mt-4">
-                <AnimatePresence>
-                  {isCentered && (
-                    <SuggestionChips onSelect={(text) => setInput(text)} />
-                  )}
-                </AnimatePresence>
+                <SuggestionChips onSelect={setInput} />
               </div>
             </motion.div>
           )}
@@ -427,6 +423,7 @@ export function Chat({
               style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2 }}
             >
               <motion.div
