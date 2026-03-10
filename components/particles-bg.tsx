@@ -15,26 +15,21 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    let renderer: import("three").WebGLRenderer;
-    let scene: import("three").Scene;
-    let camera: import("three").PerspectiveCamera;
-    let points: import("three").Points;
+    let renderer: import("three").WebGLRenderer | undefined;
     let mounted = true;
+    let cleanupFn: (() => void) | null = null;
 
     import("three").then((THREE) => {
       if (!mounted) return;
 
-      // Renderer
       renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
-      // Scene + Camera
-      scene = new THREE.Scene();
-      camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
       camera.position.z = 50;
 
-      // Particles geometry
       const count = 120;
       const positions = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
@@ -45,7 +40,6 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
-      // Speeds per particle
       const speeds = Array.from({ length: count }, () => 0.002 + Math.random() * 0.004);
       const offsets = Array.from({ length: count }, () => Math.random() * Math.PI * 2);
 
@@ -57,10 +51,9 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
         sizeAttenuation: true,
       });
 
-      points = new THREE.Points(geometry, material);
+      const points = new THREE.Points(geometry, material);
       scene.add(points);
 
-      // Resize
       const onResize = () => {
         if (!renderer || !canvas) return;
         renderer.setSize(canvas.clientWidth, canvas.clientHeight);
@@ -69,19 +62,25 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
       };
       window.addEventListener("resize", onResize);
 
-      // Animate
+      // Сохраняем cleanup для внешнего return
+      cleanupFn = () => {
+        window.removeEventListener("resize", onResize);
+        geometry.dispose();
+        material.dispose();
+      };
+
       let frame = 0;
       const tick = () => {
         if (!mounted) return;
         frame++;
         const pos = geometry.attributes.position as THREE.BufferAttribute;
         for (let i = 0; i < count; i++) {
-          pos.array[i * 3 + 1] += Math.sin(frame * speeds[i] + offsets[i]) * 0.012;
-          pos.array[i * 3] += Math.cos(frame * speeds[i] * 0.7 + offsets[i]) * 0.006;
+          (pos.array as Float32Array)[i * 3 + 1] += Math.sin(frame * speeds[i] + offsets[i]) * 0.012;
+          (pos.array as Float32Array)[i * 3] += Math.cos(frame * speeds[i] * 0.7 + offsets[i]) * 0.006;
         }
         pos.needsUpdate = true;
         points.rotation.y += 0.0003;
-        renderer.render(scene, camera);
+        renderer!.render(scene, camera);
         animFrameRef.current = requestAnimationFrame(tick);
       };
       tick();
@@ -90,6 +89,7 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
     return () => {
       mounted = false;
       cancelAnimationFrame(animFrameRef.current);
+      cleanupFn?.();
       renderer?.dispose();
     };
   }, []);
