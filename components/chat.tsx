@@ -393,7 +393,7 @@ export function Chat({
               {/* Поле ввода — centered */}
               <motion.div
                 layoutId="chat-input-area"
-                className="w-full max-w-xl z-10"
+                className="w-full max-w-2xl z-10"
                 transition={{ type: "spring", stiffness: 280, damping: 28 }}
               >
                 <ChatInput
@@ -427,16 +427,17 @@ export function Chat({
           {!isCentered && (
             <motion.div
               key="bottom-panel"
-              className="flex-shrink-0 bg-[#212121] border-t border-[#2a2a2a] px-4 pt-3 relative z-10"
-              style={{ paddingBottom: "max(1rem, env(safe-area-inset-bottom))" }}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10"
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 12 }}
+              transition={{ duration: 0.25 }}
             >
               <motion.div
                 layoutId="chat-input-area"
+                className="max-w-2xl mx-auto"
                 transition={{ type: "spring", stiffness: 280, damping: 28 }}
+                style={{ filter: "drop-shadow(0 4px 24px rgba(0,0,0,0.45))" }}
               >
                 <ChatInput
                   input={input}
@@ -448,11 +449,6 @@ export function Chat({
                   isCentered={false}
                 />
               </motion.div>
-              {/* Свечение «парения» */}
-              <div
-                className="pointer-events-none absolute left-0 right-0 -top-6 h-8"
-                style={{ background: "linear-gradient(to top, rgba(16,163,127,0.06), transparent)" }}
-              />
             </motion.div>
           )}
         </AnimatePresence>
