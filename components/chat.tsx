@@ -156,7 +156,7 @@ export function Chat({
     };
     el.addEventListener("scroll", onScroll, { passive: true });
     return () => el.removeEventListener("scroll", onScroll);
-  }, [hasMessages]);
+  }, [messages.length]);
 
   useEffect(() => {
     if (shouldFollow.current) scrollToBottom();
