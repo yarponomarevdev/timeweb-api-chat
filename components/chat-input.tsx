@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { ArrowUp, Eraser } from "lucide-react";
+import { ArrowUp } from "lucide-react";
 
 interface ChatInputProps {
   input: string;
@@ -41,16 +41,6 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, hasMessag
       onSubmit={onSubmit}
       className="relative flex items-end w-full max-w-3xl mx-auto bg-[#2f2f2f] border border-[#3a3a3a] rounded-2xl p-2 shadow-lg"
     >
-      {hasMessages && onClear && (
-        <button
-          type="button"
-          onClick={onClear}
-          title="Очистить чат"
-          className="mb-1 p-2 rounded-xl text-[#555] hover:text-[#8e8ea0] hover:bg-[#3a3a3a] transition-colors flex-shrink-0"
-        >
-          <Eraser size={18} />
-        </button>
-      )}
       <textarea
         ref={textareaRef}
         value={input}

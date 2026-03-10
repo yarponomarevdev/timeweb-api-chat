@@ -437,18 +437,23 @@ export function Chat({
                 layoutId="chat-input-area"
                 className="max-w-2xl mx-auto"
                 transition={{ type: "spring", stiffness: 280, damping: 28 }}
-                style={{ filter: "drop-shadow(0 4px 24px rgba(0,0,0,0.45))" }}
               >
                 <ChatInput
                   input={input}
                   isLoading={isLoading}
                   onInputChange={handleInputChange}
                   onSubmit={onSubmit}
-                  hasMessages={hasMessages}
-                  onClear={() => setMessages([])}
                   isCentered={false}
                 />
               </motion.div>
+              <div className="max-w-2xl mx-auto flex justify-center pt-1.5">
+                <button
+                  onClick={() => setMessages([])}
+                  className="text-xs text-[#444] hover:text-[#8e8ea0] transition-colors"
+                >
+                  Очистить чат
+                </button>
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
