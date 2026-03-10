@@ -44,10 +44,10 @@ export function ServerNotificationToast({ toasts, onDismiss }: ServerNotificatio
 function ToastItem({ toast, onDismiss }: { toast: ToastMessage; onDismiss: (id: string) => void }) {
   const color =
     toast.status === "on"
-      ? "border-green-700/50 bg-green-900/20 text-green-300"
+      ? "border-[#2d5a2d] bg-[#1a2a1a] text-green-300"
       : toast.status === "off"
-      ? "border-red-700/50 bg-red-900/20 text-red-300"
-      : "border-yellow-700/50 bg-yellow-900/20 text-yellow-300";
+      ? "border-[#5a2d2d] bg-[#2a1a1a] text-red-300"
+      : "border-[#5a4a1a] bg-[#2a2318] text-yellow-300";
 
   return (
     <div

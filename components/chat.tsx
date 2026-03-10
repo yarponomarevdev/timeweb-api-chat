@@ -54,9 +54,9 @@ export function Chat({
       } else if (msg.includes("401") || msg.toLowerCase().includes("incorrect api key")) {
         setErrorMsg("Ключ OpenAI недействителен. Нажмите «Изменить API-ключ» и введите правильный ключ.");
       } else if (msg.toLowerCase().includes("timeweb api error 401") || msg.toLowerCase().includes("evolvin.cloud api error 401")) {
-        setErrorMsg("Токен evolvin.cloud недействителен. Нажмите «Изменить API-ключ» и введите актуальный токен.");
+        setErrorMsg("Токен Timeweb недействителен. Нажмите «Изменить API-ключ» и введите актуальный токен.");
       } else if (msg.toLowerCase().includes("402") || msg.toLowerCase().includes("insufficient")) {
-        setErrorMsg("Недостаточно средств на балансе evolvin.cloud. Пополните счёт в личном кабинете.");
+        setErrorMsg("Недостаточно средств на балансе Timeweb. Пополните счёт в личном кабинете.");
       } else if (msg.toLowerCase().includes("failed to fetch") || msg.toLowerCase().includes("networkerror")) {
         setErrorMsg("Нет подключения к интернету. Проверьте соединение и попробуйте ещё раз.");
       } else {
@@ -130,6 +130,28 @@ export function Chat({
 
   useServerMonitor(monitoredServers, timewebToken, handleStatusChange);
 
+  // Toast-уведомление при успешном создании сервера
+  const notifiedCreateRef = useRef(new Set<string>());
+  useEffect(() => {
+    for (const msg of messages) {
+      for (const part of msg.parts ?? []) {
+        if (!isToolUIPart(part) || part.state !== "output-available") continue;
+        if (getToolName(part) !== "create_server") continue;
+        const output = (part as { output?: unknown }).output as Record<string, unknown> | undefined;
+        if (!output || "error" in output) continue;
+        const key = msg.id;
+        if (notifiedCreateRef.current.has(key)) continue;
+        notifiedCreateRef.current.add(key);
+        const name = (output.name as string | undefined) ?? "Новый сервер";
+        const statusLabel = (output.status_label as string | undefined) ?? "Установка";
+        setToasts((prev) => [
+          ...prev,
+          { id: `create-${key}`, serverName: name, status: "installing", statusLabel, timestamp: Date.now() },
+        ]);
+      }
+    }
+  }, [messages]);
+
   // Таймаут 60 секунд — если AI завис, показываем ошибку
   React.useEffect(() => {
     if (!isLoading) return;
@@ -190,10 +212,23 @@ export function Chat({
   const lastAssistantIndex = messages.map((m) => m.role).lastIndexOf("assistant");
   const toolStats = React.useMemo(() => getToolCallStats(messages), [messages]);
 
-  const isCentered = !hasMessages;
+  // Отдельный state для управления анимацией перехода.
+  // Не переключается синхронно с hasMessages — даёт время exit-анимациям отыграть.
+  const [chatVisible, setChatVisible] = useState(hasMessages);
+  const isCentered = !chatVisible;
+
+  // Когда появляются первые сообщения — сразу переходим в chat-режим
+  useEffect(() => {
+    if (hasMessages) setChatVisible(true);
+  }, [hasMessages]);
+
+  const handleClearChat = useCallback(() => {
+    setChatVisible(false);           // запускает exit-анимации
+    setTimeout(() => setMessages([]), 380); // очищаем после их завершения
+  }, [setMessages]);
 
   return (
-    <div className="flex bg-[#212121]" style={{ height: "100dvh" }}>
+    <div className="flex bg-[#212121] overflow-hidden" style={{ height: "100dvh" }}>
 
       {/* Сайдбар — десктоп: появляется только когда есть сообщения */}
       <AnimatePresence>
@@ -201,10 +236,10 @@ export function Chat({
           <motion.div
             key="sidebar-desktop"
             className="hidden lg:block flex-shrink-0"
-            initial={{ x: -256, opacity: 0 }}
+            initial={{ x: -280, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
-            exit={{ x: -256, opacity: 0 }}
-            transition={{ duration: 0.25, delay: 0.15 }}
+            exit={{ opacity: 0 }}
+            transition={{ type: "spring", stiffness: 280, damping: 32, delay: 0.05 }}
           >
             <Sidebar
               onAction={handleQuickAction}
@@ -247,124 +282,19 @@ export function Chat({
         {/* Частицы Three.js — всегда активны для бесшовного фона */}
         <ParticlesBg active={true} />
 
-        {/* Header — только когда есть сообщения */}
-        <AnimatePresence>
-          {!isCentered && (
-            <motion.header
-              key="header"
-              className="flex items-center justify-between px-4 h-12 border-b border-[#2a2a2a] flex-shrink-0 lg:hidden bg-[#212121]/80 backdrop-blur-sm"
-              initial={{ opacity: 0, y: -12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.2 }}
-            >
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
-                  title="Меню"
-                >
-                  <Menu size={18} />
-                </button>
-              </div>
-              <div className="flex items-center gap-1">
-                <button
-                  onClick={() => { fetchServers(); setShowServersPanel(true); }}
-                  className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
-                >
-                  <Server size={14} />
-                  <span className="hidden sm:inline">Серверы</span>
-                </button>
-                <button
-                  onClick={() => { fetchBalance(); setShowBalancePanel(true); }}
-                  className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
-                >
-                  <CreditCard size={14} />
-                  <span className="hidden sm:inline">Баланс</span>
-                </button>
-                <button
-                  onClick={() => { fetchPresets(); setShowPresetsPanel(true); }}
-                  className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
-                >
-                  <LayoutGrid size={14} />
-                  <span className="hidden sm:inline">Тарифы</span>
-                </button>
-              </div>
-            </motion.header>
-          )}
-        </AnimatePresence>
+        {/* Основной контент: chat или hero — строго последовательно */}
+        <AnimatePresence mode="wait" initial={false}>
+          {isCentered ? (
 
-        {/* Область сообщений — только когда есть сообщения */}
-        <AnimatePresence>
-          {!isCentered && (
-            <motion.div
-              key="messages"
-              ref={scrollContainerRef}
-              className="flex-1 overflow-y-auto min-h-0 bg-[#212121]"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-            >
-              <div className="max-w-2xl mx-auto px-4 py-6">
-                {messages.map((m, i) => {
-                  const userText = m.parts?.find((p) => isTextUIPart(p))?.text ?? "";
-                  const isLastAssistantMessage = m.role === "assistant" && i === lastAssistantIndex;
-                  return (
-                    <Message
-                      key={m.id}
-                      message={m}
-                      onRetry={
-                        m.role === "user" && !isLoading
-                          ? () => handleRetry(i, userText)
-                          : undefined
-                      }
-                      onSendMessage={!isLoading ? handleQuickAction : undefined}
-                      timewebToken={timewebToken}
-                      showSuggestions={isLastAssistantMessage}
-                    />
-                  );
-                })}
-                {isLoading && !errorMsg && (
-                  <div className="flex items-center gap-1.5 text-[#8e8ea0] py-4 pl-1">
-                    <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce" />
-                    <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.3s]" />
-                    <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.5s]" />
-                  </div>
-                )}
-                {(errorMsg || retryAfter > 0) && (
-                  <div className="flex items-center justify-between gap-3 bg-red-900/20 border border-red-700/40 rounded-xl px-4 py-3 my-2 text-sm text-red-300">
-                    <span>
-                      {retryAfter > 0
-                        ? `Запросы временно ограничены. Следующий запрос через ${retryAfter} сек.`
-                        : errorMsg}
-                    </span>
-                    <button
-                      onClick={() => { setErrorMsg(null); setRetryAfter(0); }}
-                      className="text-red-400 hover:text-red-200 transition-colors flex-shrink-0"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Centered-состояние: логотип + чипы */}
-        <AnimatePresence>
-          {isCentered && (
+            /* ── HERO (стартовый экран) ── */
             <motion.div
               key="centered-hero"
-              className="flex-1 flex flex-col items-center justify-center px-4 relative z-10"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.2 }}
+              className="flex-1 flex flex-col items-center justify-center px-4 relative z-[2]"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10, scale: 0.98 }}
+              transition={{ duration: 0.32, ease: [0.4, 0, 0.2, 1] }}
             >
-              {/* Кнопка меню на мобильном */}
               <button
                 onClick={() => setSidebarOpen(true)}
                 className="lg:hidden absolute top-4 left-4 p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
@@ -377,7 +307,7 @@ export function Chat({
                 className="text-2xl font-bold text-[#ececec] mb-2 text-center"
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={{ duration: 0.3, delay: 0.06 }}
               >
                 evolvin.cloud
               </motion.h1>
@@ -385,16 +315,15 @@ export function Chat({
                 className="text-[#8e8ea0] text-sm mb-8 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.3, delay: 0.05 }}
+                transition={{ duration: 0.3, delay: 0.12 }}
               >
                 Управляй своими серверами на Timeweb естественным языком
               </motion.p>
 
-              {/* Поле ввода — centered */}
               <motion.div
                 layoutId="chat-input-area"
                 className="w-full max-w-2xl z-10"
-                transition={{ type: "spring", stiffness: 280, damping: 28 }}
+                transition={{ type: "spring", stiffness: 220, damping: 30 }}
               >
                 <ChatInput
                   input={input}
@@ -406,12 +335,15 @@ export function Chat({
                 />
               </motion.div>
 
-              {/* Чипы */}
-              <div className="mt-4">
-                <SuggestionChips onSelect={setInput} />
-              </div>
+              <motion.div
+                className="mt-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.25, delay: 0.18 }}
+              >
+                <SuggestionChips onSelect={handleQuickAction} />
+              </motion.div>
 
-              {/* Сменить ключи */}
               <button
                 onClick={onChangeToken}
                 className="absolute bottom-5 left-5 text-xs text-[#555] hover:text-[#8e8ea0] transition-colors"
@@ -419,42 +351,143 @@ export function Chat({
                 Изменить API-ключ
               </button>
             </motion.div>
-          )}
-        </AnimatePresence>
 
-        {/* Нижняя панель — только когда есть сообщения */}
-        <AnimatePresence>
-          {!isCentered && (
+          ) : (
+
+            /* ── CHAT (режим чата) ── */
             <motion.div
-              key="bottom-panel"
-              className="flex-shrink-0 px-4 pb-4 pt-2 relative z-10"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 12 }}
-              transition={{ duration: 0.25 }}
+              key="chat-view"
+              className="flex-1 flex flex-col min-h-0 relative z-[1]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
             >
-              <motion.div
-                layoutId="chat-input-area"
-                className="max-w-2xl mx-auto"
-                transition={{ type: "spring", stiffness: 280, damping: 28 }}
+              {/* Header мобильный */}
+              <motion.header
+                className="flex items-center justify-between px-4 h-12 border-b border-[#2a2a2a] flex-shrink-0 lg:hidden bg-[#212121]"
+                initial={{ opacity: 0, y: -12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.25, delay: 0.1 }}
               >
-                <ChatInput
-                  input={input}
-                  isLoading={isLoading}
-                  onInputChange={handleInputChange}
-                  onSubmit={onSubmit}
-                  isCentered={false}
-                />
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSidebarOpen(true)}
+                    className="p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+                    title="Меню"
+                  >
+                    <Menu size={18} />
+                  </button>
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => { fetchServers(); setShowServersPanel(true); }}
+                    className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
+                  >
+                    <Server size={14} />
+                    <span className="hidden sm:inline">Серверы</span>
+                  </button>
+                  <button
+                    onClick={() => { fetchBalance(); setShowBalancePanel(true); }}
+                    className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
+                  >
+                    <CreditCard size={14} />
+                    <span className="hidden sm:inline">Баланс</span>
+                  </button>
+                  <button
+                    onClick={() => { fetchPresets(); setShowPresetsPanel(true); }}
+                    className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
+                  >
+                    <LayoutGrid size={14} />
+                    <span className="hidden sm:inline">Тарифы</span>
+                  </button>
+                </div>
+              </motion.header>
+
+              {/* Область сообщений */}
+              <motion.div
+                ref={scrollContainerRef}
+                className="flex-1 overflow-y-auto min-h-0"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.08 }}
+              >
+                <div className="max-w-2xl mx-auto px-4 py-6">
+                  {messages.map((m, i) => {
+                    const userText = m.parts?.find((p) => isTextUIPart(p))?.text ?? "";
+                    const isLastAssistantMessage = m.role === "assistant" && i === lastAssistantIndex;
+                    return (
+                      <Message
+                        key={m.id}
+                        message={m}
+                        onRetry={
+                          m.role === "user" && !isLoading
+                            ? () => handleRetry(i, userText)
+                            : undefined
+                        }
+                        onSendMessage={!isLoading ? handleQuickAction : undefined}
+                        timewebToken={timewebToken}
+                        showSuggestions={isLastAssistantMessage}
+                      />
+                    );
+                  })}
+                  {isLoading && !errorMsg && (
+                    <div className="flex items-center gap-1.5 text-[#8e8ea0] py-4 pl-1">
+                      <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce" />
+                      <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.3s]" />
+                      <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.5s]" />
+                    </div>
+                  )}
+                  {(errorMsg || retryAfter > 0) && (
+                    <div className="flex items-center justify-between gap-3 bg-[#2d1a1a] border border-[#5a2d2d] rounded-xl px-4 py-3 my-2 text-sm text-red-300">
+                      <span>
+                        {retryAfter > 0
+                          ? `Запросы временно ограничены. Следующий запрос через ${retryAfter} сек.`
+                          : errorMsg}
+                      </span>
+                      <button
+                        onClick={() => { setErrorMsg(null); setRetryAfter(0); }}
+                        className="text-red-400 hover:text-red-200 transition-colors flex-shrink-0"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
               </motion.div>
-              <div className="max-w-2xl mx-auto flex justify-center pt-1.5">
-                <button
-                  onClick={() => setMessages([])}
-                  className="text-xs text-[#444] hover:text-[#8e8ea0] transition-colors"
+
+              {/* Нижняя панель */}
+              <motion.div
+                className="flex-shrink-0 px-4 pb-4 pt-2 relative z-[2]"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.12, ease: [0.4, 0, 0.2, 1] }}
+              >
+                <motion.div
+                  layoutId="chat-input-area"
+                  className="max-w-2xl mx-auto"
+                  transition={{ type: "spring", stiffness: 220, damping: 30 }}
                 >
-                  Очистить чат
-                </button>
-              </div>
+                  <ChatInput
+                    input={input}
+                    isLoading={isLoading}
+                    onInputChange={handleInputChange}
+                    onSubmit={onSubmit}
+                    isCentered={false}
+                  />
+                </motion.div>
+                <div className="max-w-2xl mx-auto flex justify-center pt-1.5">
+                  <button
+                    onClick={handleClearChat}
+                    className="text-xs text-[#444] hover:text-[#8e8ea0] transition-colors"
+                  >
+                    Очистить чат
+                  </button>
+                </div>
+              </motion.div>
             </motion.div>
+
           )}
         </AnimatePresence>
 
@@ -534,11 +567,19 @@ export function Chat({
                   </div>
                 )}
                 {cachedBalance.is_blocked && (
-                  <div className="bg-red-900/20 border border-red-700/40 rounded-lg px-3 py-2 text-sm text-red-300">
+                  <div className="bg-[#2d1a1a] border border-[#5a2d2d] rounded-lg px-3 py-2 text-sm text-red-300">
                     Аккаунт заблокирован
                   </div>
                 )}
               </div>
+              <a
+                href="https://timeweb.cloud/my/finances/payment"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-[#10a37f] hover:bg-[#0e9572] text-white text-sm font-medium py-2.5 rounded-xl transition-colors"
+              >
+                Пополнить баланс на Timeweb
+              </a>
               <button
                 onClick={() => { handleQuickAction("Какой у меня баланс?"); setShowBalancePanel(false); }}
                 className="text-sm text-[#8e8ea0] hover:text-[#10a37f] transition-colors text-center py-1"

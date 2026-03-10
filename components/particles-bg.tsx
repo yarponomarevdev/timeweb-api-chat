@@ -32,28 +32,48 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
       renderer.setSize(canvas.clientWidth, canvas.clientHeight);
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-      camera.position.z = 50;
+      // Камера дальше — частицы не могут приблизиться до критической дистанции
+      const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 1, 500);
+      camera.position.z = 60;
 
-      const count = 120;
+      const count = 100;
       const positions = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        positions[i * 3] = (Math.random() - 0.5) * 100;
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 60;
-        positions[i * 3 + 2] = (Math.random() - 0.5) * 40;
+        positions[i * 3]     = (Math.random() - 0.5) * 80;  // X: ±40
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 50;  // Y: ±25
+        positions[i * 3 + 2] = (Math.random() - 0.5) * 20;  // Z: ±10 (далеко от камеры)
       }
+
       const geometry = new THREE.BufferGeometry();
       geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
 
-      const speeds = Array.from({ length: count }, () => 0.002 + Math.random() * 0.004);
+      // Скорости в рад/сек — непрерывная анимация без оборота счётчика
+      const speeds  = Array.from({ length: count }, () => 0.08 + Math.random() * 0.12);
       const offsets = Array.from({ length: count }, () => Math.random() * Math.PI * 2);
+      const initialPositions = new Float32Array(positions);
+
+      // Круглая soft-dot текстура, чтобы не было квадратов
+      const dotCanvas = document.createElement("canvas");
+      dotCanvas.width  = 32;
+      dotCanvas.height = 32;
+      const ctx = dotCanvas.getContext("2d")!;
+      const grad = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+      grad.addColorStop(0,   "rgba(255,255,255,1)");
+      grad.addColorStop(0.4, "rgba(255,255,255,0.6)");
+      grad.addColorStop(1,   "rgba(255,255,255,0)");
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 32, 32);
+      const dotTexture = new THREE.CanvasTexture(dotCanvas);
 
       const material = new THREE.PointsMaterial({
         color: 0x10a37f,
-        size: 0.5,
+        size: 0.7,
         transparent: true,
-        opacity: 0.6,
+        opacity: 0.55,
         sizeAttenuation: true,
+        map: dotTexture,
+        alphaMap: dotTexture,
+        depthWrite: false,
       });
 
       const points = new THREE.Points(geometry, material);
@@ -67,31 +87,31 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
       };
       window.addEventListener("resize", onResize);
 
-      // Сохраняем cleanup для внешнего return
       cleanupFn = () => {
         window.removeEventListener("resize", onResize);
         geometry.dispose();
         material.dispose();
+        dotTexture.dispose();
       };
 
-      // Хранение начальных позиций для ограниченного колебания
-      const initialPositions = new Float32Array(positions);
-
-      let frame = 0;
       const tick = () => {
         if (!mounted) return;
         if (!activeRef.current) {
           animFrameRef.current = requestAnimationFrame(tick);
           return;
         }
-        frame = (frame + 1) % 10000;
+
+        // performance.now() в секундах — непрерывное время без разрывов
+        const t = performance.now() * 0.001;
         const pos = geometry.attributes.position as THREE.BufferAttribute;
+        const arr = pos.array as Float32Array;
         for (let i = 0; i < count; i++) {
-          (pos.array as Float32Array)[i * 3] = initialPositions[i * 3] + Math.cos(frame * speeds[i] * 0.7 + offsets[i]) * 3;
-          (pos.array as Float32Array)[i * 3 + 1] = initialPositions[i * 3 + 1] + Math.sin(frame * speeds[i] + offsets[i]) * 2;
+          arr[i * 3]     = initialPositions[i * 3]     + Math.cos(t * speeds[i] * 0.7 + offsets[i]) * 3;
+          arr[i * 3 + 1] = initialPositions[i * 3 + 1] + Math.sin(t * speeds[i]       + offsets[i]) * 2;
+          // Z фиксирован — никакой ротации, частицы не летят на камеру
         }
         pos.needsUpdate = true;
-        points.rotation.y += 0.0003;
+
         renderer!.render(scene, camera);
         animFrameRef.current = requestAnimationFrame(tick);
       };
@@ -111,6 +131,7 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
       ref={canvasRef}
       className="absolute inset-0 w-full h-full pointer-events-none"
       style={{
+        zIndex: 0,
         opacity: active ? 1 : 0,
         transition: "opacity 0.4s ease-out",
       }}

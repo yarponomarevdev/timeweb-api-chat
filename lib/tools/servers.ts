@@ -175,7 +175,7 @@ export function createServerTools(token: string) {
         if (server.status === "no_paid") {
           return {
             error: true,
-            message: "Недостаточно средств на балансе для создания сервера. Пополните баланс в панели управления evolvin.cloud.",
+            message: "Недостаточно средств на балансе для создания сервера. Пополните баланс в панели управления Timeweb.",
           };
         }
 

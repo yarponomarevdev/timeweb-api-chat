@@ -251,7 +251,7 @@ export function ActionsMenu({ onAction, disabled }: ActionsMenuProps) {
         disabled={disabled}
         className={`mb-1 p-2 rounded-xl transition-colors flex-shrink-0 ${
           open
-            ? "bg-[#10a37f]/20 text-[#10a37f]"
+            ? "bg-[#1a3a30] text-[#10a37f]"
             : "text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#3a3a3a]"
         } disabled:opacity-40 disabled:cursor-not-allowed`}
         title="Все действия"

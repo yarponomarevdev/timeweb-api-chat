@@ -60,7 +60,7 @@ export function QuickActionsGrid({ onAction }: QuickActionsGridProps) {
         <button
           key={action.message}
           onClick={() => onAction(action.message)}
-          className="flex flex-col gap-2 p-4 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#10a37f]/40 rounded-2xl text-left transition-all group"
+          className="flex flex-col gap-2 p-4 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#197a5f] rounded-2xl text-left transition-all group"
         >
           <span className="text-[#10a37f] group-hover:scale-110 transition-transform inline-block">
             {action.icon}

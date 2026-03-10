@@ -39,12 +39,12 @@ export async function apiRequest<T>(
 
     if (!res.ok) {
       if (RETRYABLE_STATUSES.has(res.status) && attempt < maxAttempts - 1) {
-        lastError = new Error(`evolvin.cloud API error ${res.status}: ${res.statusText}`);
+        lastError = new Error(`Timeweb API error ${res.status}: ${res.statusText}`);
         continue;
       }
       const error = await res.json().catch(() => ({ message: res.statusText }));
       throw new Error(
-        `evolvin.cloud API error ${res.status}: ${error.message || JSON.stringify(error)}`
+        `Timeweb API error ${res.status}: ${error.message || JSON.stringify(error)}`
       );
     }
 

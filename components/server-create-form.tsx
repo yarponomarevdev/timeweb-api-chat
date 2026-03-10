@@ -95,6 +95,17 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
     onConfirm("Отменяю создание сервера");
   };
 
+  // Форма уже отправлена — показываем компактный статус вместо полной формы
+  if (isDone) {
+    if (!isCreating) return null; // отменено
+    return (
+      <div className="bg-[#252525] rounded-xl border border-[#333] px-4 py-3 my-2 text-sm text-[#8e8ea0] flex items-center gap-2">
+        <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[#10a37f] border-[#3a3a3a] animate-spin flex-shrink-0" />
+        <span>Создание сервера <span className="text-[#ececec] font-medium">{server_name}</span> запущено...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="my-2 flex flex-col gap-3 w-full">
       {/* Выбор CPU */}
@@ -218,7 +229,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
                 onClick={() => setSelectedLocation(loc)}
                 className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border text-left transition-all ${
                   selectedLocation.code === loc.code
-                    ? "bg-[#10a37f]/10 border-[#10a37f] text-[#ececec]"
+                    ? "bg-[#162e26] border-[#10a37f] text-[#ececec]"
                     : "bg-[#2f2f2f] border-[#3a3a3a] text-[#8e8ea0] hover:border-[#555] hover:text-[#ececec]"
                 }`}
               >

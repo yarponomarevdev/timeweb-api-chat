@@ -3,7 +3,6 @@
 import React, { useState } from "react";
 import {
   Server,
-  Plus,
   Key,
   X,
   CreditCard,
@@ -25,12 +24,11 @@ import {
   Cloud,
   Mail,
   Layers,
+  LayoutGrid,
+  Wrench,
   ChevronDown,
-  MessageSquare,
-  Trash2,
+  Plus,
 } from "lucide-react";
-import type { ChatSession } from "@/lib/chat-store";
-import { relativeTime } from "@/lib/chat-store";
 
 interface Action {
   label: string;
@@ -217,16 +215,16 @@ const CATEGORIES: Category[] = [
 
 interface SidebarProps {
   onAction: (text: string) => void;
-  onNewChat: () => void;
   onChangeToken: () => void;
   onClose?: () => void;
-  sessions?: ChatSession[];
-  activeSessionId?: string | null;
-  onSwitchSession?: (id: string) => void;
-  onDeleteSession?: (id: string) => void;
+onOpenServers?: () => void;
+  onOpenBalance?: () => void;
+  onOpenPresets?: () => void;
+  onOpenToolLog?: () => void;
+  toolStats?: { total: number; errorCount: number; pendingCount: number };
 }
 
-export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions, activeSessionId, onSwitchSession, onDeleteSession }: SidebarProps) {
+export function Sidebar({ onAction, onChangeToken, onClose, onOpenServers, onOpenBalance, onOpenPresets, onOpenToolLog, toolStats }: SidebarProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   const handleAction = (message: string) => {
@@ -243,9 +241,6 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
       {/* Шапка */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a] flex-shrink-0">
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 bg-[#10a37f]/15 rounded-lg flex items-center justify-center">
-            <Server size={14} className="text-[#10a37f]" />
-          </div>
           <span className="font-semibold text-sm text-[#ececec]">evolvin.cloud</span>
         </div>
         {onClose && (
@@ -258,49 +253,48 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
         )}
       </div>
 
-      {/* Новый чат */}
-      <div className="px-3 pt-3 pb-2 flex-shrink-0">
-        <button
-          onClick={() => { onNewChat(); onClose?.(); }}
-          className="flex items-center gap-2 w-full bg-[#10a37f]/10 hover:bg-[#10a37f]/20 text-[#10a37f] text-sm font-medium py-2 px-3 rounded-lg transition-colors"
-        >
-          <Plus size={15} />
-          Новый чат
-        </button>
-      </div>
-
-      {/* История чатов */}
-      {sessions && sessions.length > 0 && (
-        <div className="px-2 pb-1 flex-shrink-0">
-          <div className="flex items-center gap-1.5 px-2.5 py-1.5 text-[11px] text-[#8e8ea0] uppercase tracking-wider font-medium">
-            <MessageSquare size={11} />
-            История
-          </div>
-          <div className="max-h-48 overflow-y-auto sidebar-scroll">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className={`group flex items-center gap-1.5 w-full px-2.5 py-1.5 rounded-lg text-[13px] transition-colors cursor-pointer ${
-                  activeSessionId === session.id
-                    ? "bg-[#2a2a2a] text-[#ececec]"
-                    : "text-[#a0a0b0] hover:text-[#ececec] hover:bg-[#232323]"
-                }`}
-                onClick={() => { onSwitchSession?.(session.id); onClose?.(); }}
+      {/* Быстрый доступ */}
+      {(onOpenServers || onOpenBalance || onOpenPresets) && (
+        <div className="px-2 pt-2 pb-1 flex-shrink-0 border-b border-[#2a2a2a]">
+          {onOpenServers && (
+            <button
+              onClick={onOpenServers}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[#a0a0b0] hover:text-[#ececec] hover:bg-[#232323] transition-colors"
+            >
+              <Server size={15} className="text-[#10a37f] flex-shrink-0" />
+              Мои серверы
+            </button>
+          )}
+          {onOpenBalance && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={onOpenBalance}
+                className="flex-1 flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[#a0a0b0] hover:text-[#ececec] hover:bg-[#232323] transition-colors"
               >
-                <div className="flex-1 min-w-0">
-                  <div className="truncate text-[13px]">{session.title}</div>
-                  <div className="text-[11px] text-[#6e6e80]">{relativeTime(session.updatedAt)}</div>
-                </div>
-                <button
-                  onClick={(e) => { e.stopPropagation(); onDeleteSession?.(session.id); }}
-                  className="flex-shrink-0 p-1 rounded opacity-0 group-hover:opacity-100 hover:bg-[#3a3a3a] text-[#8e8ea0] hover:text-red-400 transition-all"
-                >
-                  <Trash2 size={12} />
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="mx-2 my-1.5 border-b border-[#2a2a2a]" />
+                <CreditCard size={15} className="text-[#10a37f] flex-shrink-0" />
+                Баланс
+              </button>
+              <a
+                href="https://timeweb.cloud/my/finances/payment"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 px-2.5 py-2 rounded-lg text-[12px] text-[#10a37f] hover:text-white hover:bg-[#10a37f] border border-[#10a37f22] hover:border-[#10a37f] transition-colors flex-shrink-0"
+                title="Пополнить баланс на Timeweb"
+              >
+                <Plus size={12} />
+                Пополнить
+              </a>
+            </div>
+          )}
+          {onOpenPresets && (
+            <button
+              onClick={onOpenPresets}
+              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-[13px] text-[#a0a0b0] hover:text-[#ececec] hover:bg-[#232323] transition-colors"
+            >
+              <LayoutGrid size={15} className="text-[#10a37f] flex-shrink-0" />
+              Тарифы
+            </button>
+          )}
         </div>
       )}
 
@@ -348,20 +342,41 @@ export function Sidebar({ onAction, onNewChat, onChangeToken, onClose, sessions,
       </div>
 
       {/* Нижняя панель */}
-      <div className="flex-shrink-0 px-3 py-3 border-t border-[#2a2a2a]">
+      <div className="flex-shrink-0 px-3 py-3 border-t border-[#2a2a2a] flex flex-col gap-0.5">
+        {onOpenToolLog && (
+          <button
+            onClick={() => { onOpenToolLog(); onClose?.(); }}
+            className="flex items-center justify-between w-full hover:bg-[#2f2f2f] text-[13px] py-1.5 px-2.5 rounded-lg transition-colors text-[#8e8ea0] hover:text-[#ececec]"
+          >
+            <span className="flex items-center gap-2">
+              <Wrench size={14} />
+              Журнал вызовов
+            </span>
+            {toolStats && toolStats.total > 0 && (
+              <span className="flex items-center gap-1.5">
+                {toolStats.errorCount > 0 && (
+                  <span className="text-[11px] text-red-400 bg-[#2d1a1a] border border-[#5a2d2d] px-1.5 py-0.5 rounded-full">
+                    {toolStats.errorCount} ошибок
+                  </span>
+                )}
+                {toolStats.pendingCount > 0 && (
+                  <span className="text-[11px] text-[#10a37f] animate-pulse">
+                    {toolStats.pendingCount}…
+                  </span>
+                )}
+                <span className="text-[11px] text-[#555] bg-[#2a2a2a] px-1.5 py-0.5 rounded-full">
+                  {toolStats.total}
+                </span>
+              </span>
+            )}
+          </button>
+        )}
         <button
           onClick={() => { onChangeToken(); onClose?.(); }}
           className="flex items-center gap-2 w-full hover:bg-[#2f2f2f] text-[13px] py-1.5 px-2.5 rounded-lg transition-colors text-[#8e8ea0] hover:text-[#ececec]"
         >
           <Key size={14} />
           Изменить API-ключ
-        </button>
-        <button
-          onClick={() => { onAction("Какой у меня баланс?"); onClose?.(); }}
-          className="flex items-center gap-2 w-full hover:bg-[#2f2f2f] text-[13px] py-1.5 px-2.5 rounded-lg transition-colors text-[#8e8ea0] hover:text-[#ececec]"
-        >
-          <CreditCard size={14} />
-          Баланс
         </button>
       </div>
     </div>

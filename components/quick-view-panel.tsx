@@ -32,19 +32,27 @@ export function QuickViewPanel({
     return () => document.removeEventListener("keydown", handler);
   }, [isOpen, onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-40 flex">
-      {/* Overlay */}
+    <div
+      className="fixed inset-0 z-40 flex"
+      style={{ pointerEvents: isOpen ? "auto" : "none" }}
+    >
+      {/* Затемнение фона */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60 transition-opacity duration-300"
+        style={{ opacity: isOpen ? 1 : 0 }}
         onClick={onClose}
       />
 
-      {/* Panel */}
-      <div className="absolute right-0 top-0 h-full w-full sm:w-[400px] bg-[#1a1a1a] border-l border-[#2a2a2a] flex flex-col shadow-2xl">
-        {/* Header */}
+      {/* Панель — выезжает слева */}
+      <div
+        className="absolute left-0 top-0 h-full w-full sm:w-[400px] bg-[#1a1a1a] border-r border-[#2a2a2a] flex flex-col transition-transform duration-300 ease-in-out"
+        style={{
+          transform: isOpen ? "translateX(0)" : "translateX(-100%)",
+          boxShadow: isOpen ? "4px 0 32px rgba(0,0,0,0.5)" : "none",
+        }}
+      >
+        {/* Заголовок */}
         <div className="flex items-center justify-between px-4 h-14 border-b border-[#2a2a2a] flex-shrink-0">
           <span className="font-semibold text-sm text-[#ececec]">{title}</span>
           <div className="flex items-center gap-1">
@@ -67,7 +75,7 @@ export function QuickViewPanel({
           </div>
         </div>
 
-        {/* Content */}
+        {/* Контент */}
         <div className="flex-1 overflow-y-auto p-4">
           {isLoading && (
             <div className="flex items-center justify-center py-12 text-[#8e8ea0] text-sm gap-2">
@@ -76,7 +84,7 @@ export function QuickViewPanel({
             </div>
           )}
           {!isLoading && error && (
-            <div className="text-red-400 text-sm bg-red-900/20 border border-red-700/40 rounded-xl px-4 py-3">
+            <div className="text-red-400 text-sm bg-[#2d1a1a] border border-[#5a2d2d] rounded-xl px-4 py-3">
               {error}
             </div>
           )}

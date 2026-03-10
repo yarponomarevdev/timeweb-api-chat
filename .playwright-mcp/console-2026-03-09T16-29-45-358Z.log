@@ -1,3 +1,0 @@
-[   12949ms] [ERROR] TypeError: Cannot read properties of undefined (reading 'state')
-    at Chat.makeRequest (http://localhost:3000/_next/static/chunks/node_modules_ai_dist_index_mjs_a7281a1b._.js:12593:50)
-    at async AbstractChat.sendMessage (http://localhost:3000/_next/static/chunks/node_modules_ai_dist_index_mjs_a7281a1b._.js:12317:13) @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127

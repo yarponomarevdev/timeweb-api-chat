@@ -303,7 +303,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                   const output = part.output as CreateServerOutput;
                   if ("error" in output && output.error) {
                     return (
-                      <div key={index} className="bg-red-900/30 rounded-xl p-3 border border-red-700 text-red-300 text-sm my-2">
+                      <div key={index} className="bg-[#2a1a1a] rounded-xl p-3 border border-[#5a2d2d] text-red-300 text-sm my-2">
                         {output.message}
                       </div>
                     );
@@ -340,8 +340,8 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                       key={index}
                       className={`rounded-xl p-3 border my-2 text-sm ${
                         output.success
-                          ? "bg-green-900/30 border-green-700 text-green-300"
-                          : "bg-red-900/30 border-red-700 text-red-300"
+                          ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300"
+                          : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"
                       }`}
                     >
                       {output.message}
@@ -453,7 +453,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "create_ssh_key") {
                   const output = part.output as CreateSSHKeyOutput;
                   return (
-                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                    <div key={index} className="bg-[#1a2a1a] rounded-xl p-3 border border-[#2d5a2d] text-green-300 text-sm my-2">
                       {output.message} (fingerprint: <span className="font-mono text-xs">{output.fingerprint}</span>)
                     </div>
                   );
@@ -462,7 +462,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "delete_ssh_key") {
                   const output = part.output as DeleteSSHKeyOutput;
                   return (
-                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                    <div key={index} className="bg-[#1a2a1a] rounded-xl p-3 border border-[#2d5a2d] text-green-300 text-sm my-2">
                       {output.message}
                     </div>
                   );
@@ -521,7 +521,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "create_backup") {
                   const output = part.output as CreateBackupOutput;
                   return (
-                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                    <div key={index} className="bg-[#1a2a1a] rounded-xl p-3 border border-[#2d5a2d] text-green-300 text-sm my-2">
                       {output.message}
                     </div>
                   );
@@ -530,7 +530,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "restore_backup") {
                   const output = part.output as RestoreBackupOutput;
                   return (
-                    <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+                    <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
                       {output.message}
                     </div>
                   );
@@ -590,7 +590,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "create_firewall") {
                   const output = part.output as CreateFirewallOutput;
                   return (
-                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                    <div key={index} className="bg-[#1a2a1a] rounded-xl p-3 border border-[#2d5a2d] text-green-300 text-sm my-2">
                       {output.message} (ID: <span className="font-mono text-xs">{output.id}</span>)
                     </div>
                   );
@@ -599,7 +599,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "add_firewall_rule") {
                   const output = part.output as AddFirewallRuleOutput;
                   return (
-                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                    <div key={index} className="bg-[#1a2a1a] rounded-xl p-3 border border-[#2d5a2d] text-green-300 text-sm my-2">
                       {output.message}: {output.direction} {output.protocol}
                       {output.port ? `:${output.port}` : ""} {output.cidr}
                     </div>
@@ -609,7 +609,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "delete_firewall" || toolName === "delete_firewall_rule" || toolName === "attach_firewall_to_server") {
                   const output = part.output as { success: boolean; message: string } | AttachFirewallOutput;
                   return (
-                    <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+                    <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
                       {output.message}
                     </div>
                   );
@@ -623,7 +623,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                       {output.domains.map((d) => (
                         <div key={d.id} className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] px-4 py-3 flex items-center justify-between text-sm">
                           <span className="font-medium text-[#ececec]">{d.name}</span>
-                          <span className={`text-xs px-2 py-1 rounded-md ${d.days_left > 30 ? "text-green-400 bg-green-900/20" : d.days_left > 7 ? "text-yellow-400 bg-yellow-900/20" : "text-red-400 bg-red-900/20"}`}>
+                          <span className={`text-xs px-2 py-1 rounded-md ${d.days_left > 30 ? "text-green-400 bg-[#1a2d1a]" : d.days_left > 7 ? "text-yellow-400 bg-[#2a2318]" : "text-red-400 bg-[#2d1a1a]"}`}>
                             {d.days_left} дн.
                           </span>
                         </div>
@@ -672,7 +672,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 if (toolName === "reboot_server_hard") {
                   const output = part.output as { success: boolean; message: string };
                   return (
-                    <div key={index} className="bg-green-900/30 rounded-xl p-3 border border-green-700 text-green-300 text-sm my-2">
+                    <div key={index} className="bg-[#1a2a1a] rounded-xl p-3 border border-[#2d5a2d] text-green-300 text-sm my-2">
                       {output.message}
                     </div>
                   );
@@ -694,13 +694,13 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                               key={i}
                               onClick={() => onSendMessage?.(`Создай сервер с ${sw.name}`)}
                               title={sw.description ?? undefined}
-                              className="flex flex-col gap-1 p-3 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#10a37f]/40 rounded-xl text-left transition-all group"
+                              className="flex flex-col gap-1 p-3 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#197a5f] rounded-xl text-left transition-all group"
                             >
                               <span className="text-sm font-medium text-[#ececec] group-hover:text-[#10a37f] transition-colors">
                                 {sw.name}
                               </span>
                               {sw.category && (
-                                <span className="text-[10px] text-[#10a37f]/70 uppercase tracking-wide">
+                                <span className="text-[10px] text-[#0d8068] uppercase tracking-wide">
                                   {sw.category}
                                 </span>
                               )}
@@ -724,7 +724,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                       <button
                         onClick={() => onSendMessage?.(`Создай сервер с ${swName}`)}
                         title={swDesc ?? undefined}
-                        className="flex flex-col gap-1 p-3 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#10a37f]/40 rounded-xl text-left transition-all group w-full max-w-xs"
+                        className="flex flex-col gap-1 p-3 bg-[#2a2a2a] hover:bg-[#313131] border border-[#3a3a3a] hover:border-[#197a5f] rounded-xl text-left transition-all group w-full max-w-xs"
                       >
                         <span className="text-sm font-medium text-[#ececec] group-hover:text-[#10a37f] transition-colors">
                           {swName}
@@ -770,7 +770,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                   if (typeof output.message === "string") {
                     const success = output.success !== false;
                     return (
-                      <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+                      <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
                         {output.message as string}
                       </div>
                     );
@@ -822,7 +822,7 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
 
               if (part.state === "output-error") {
                 return (
-                  <div key={index} className="bg-red-900/30 rounded-xl p-3 border border-red-700 text-red-300 text-sm my-2">
+                  <div key={index} className="bg-[#2a1a1a] rounded-xl p-3 border border-[#5a2d2d] text-red-300 text-sm my-2">
                     Ошибка при выполнении: {toolName}
                     {("errorText" in part) && `: ${(part as { errorText?: string }).errorText}`}
                   </div>
@@ -847,7 +847,7 @@ function SuggestedActions({ suggestions, onAction }: { suggestions: string[]; on
         <button
           key={s}
           onClick={() => onAction(s)}
-          className="bg-[#2a2a2a] hover:bg-[#10a37f]/20 hover:border-[#10a37f]/50 border border-[#3a3a3a] rounded-full px-3 py-1 text-xs text-[#8e8ea0] hover:text-[#ececec] transition-all"
+          className="bg-[#2a2a2a] hover:bg-[#1a3a30] hover:border-[#197a5f] border border-[#3a3a3a] rounded-full px-3 py-1 text-xs text-[#8e8ea0] hover:text-[#ececec] transition-all"
         >
           {s}
         </button>
@@ -867,18 +867,18 @@ function StatItem({ label, value }: { label: string; value: string }) {
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
-    on: "text-green-400 bg-green-900/20",
-    active: "text-green-400 bg-green-900/20",
-    running: "text-green-400 bg-green-900/20",
-    deployed: "text-green-400 bg-green-900/20",
-    off: "text-[#8e8ea0] bg-[#3a3a3a]/50",
-    installing: "text-yellow-400 bg-yellow-900/20",
-    creating: "text-yellow-400 bg-yellow-900/20",
-    pending: "text-yellow-400 bg-yellow-900/20",
-    error: "text-red-400 bg-red-900/20",
-    failed: "text-red-400 bg-red-900/20",
+    on: "text-green-400 bg-[#1a2d1a]",
+    active: "text-green-400 bg-[#1a2d1a]",
+    running: "text-green-400 bg-[#1a2d1a]",
+    deployed: "text-green-400 bg-[#1a2d1a]",
+    off: "text-[#8e8ea0] bg-[#2e2e2e]",
+    installing: "text-yellow-400 bg-[#2a2318]",
+    creating: "text-yellow-400 bg-[#2a2318]",
+    pending: "text-yellow-400 bg-[#2a2318]",
+    error: "text-red-400 bg-[#2d1a1a]",
+    failed: "text-red-400 bg-[#2d1a1a]",
   };
-  const color = colors[status] ?? "text-[#8e8ea0] bg-[#3a3a3a]/50";
+  const color = colors[status] ?? "text-[#8e8ea0] bg-[#2e2e2e]";
   return <span className={`text-xs px-2 py-1 rounded-md ${color}`}>{status}</span>;
 }
 
@@ -921,7 +921,7 @@ function GenericToolOutput({ output }: { output: Record<string, unknown> }) {
   if (typeof output.message === "string") {
     const success = output.success !== false;
     return (
-      <div className={`rounded-xl p-3 border my-2 text-sm ${success ? "bg-green-900/30 border-green-700 text-green-300" : "bg-red-900/30 border-red-700 text-red-300"}`}>
+      <div className={`rounded-xl p-3 border my-2 text-sm ${success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
         {output.message as string}
       </div>
     );

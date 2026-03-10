@@ -22,7 +22,7 @@ export interface DeleteSSHKeyOutput {
 export function createSSHKeyTools(token: string) {
   return {
     list_ssh_keys: tool({
-      description: "Показать список SSH-ключей в аккаунте evolvin.cloud",
+      description: "Показать список SSH-ключей в аккаунте Timeweb",
       inputSchema: z.object({}),
       execute: async () => {
         const keys = await tw.listSSHKeys(token);
@@ -37,7 +37,7 @@ export function createSSHKeyTools(token: string) {
     }),
 
     create_ssh_key: tool({
-      description: "Добавить SSH-ключ в аккаунт evolvin.cloud",
+      description: "Добавить SSH-ключ в аккаунт Timeweb",
       inputSchema: z.object({
         name: z.string().describe("Название ключа"),
         body: z.string().describe("Публичный ключ (содержимое файла .pub)"),
@@ -56,7 +56,7 @@ export function createSSHKeyTools(token: string) {
     }),
 
     delete_ssh_key: tool({
-      description: "Удалить SSH-ключ из аккаунта evolvin.cloud по его ID",
+      description: "Удалить SSH-ключ из аккаунта Timeweb по его ID",
       inputSchema: z
         .object({
           key_id: z.number().optional().describe("ID SSH-ключа"),

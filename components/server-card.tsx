@@ -111,10 +111,10 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
     .find((ip) => ip.is_main && ip.type === "ipv4")?.ip;
 
   const statusBadge: Record<string, string> = {
-    on: "bg-green-500/15 text-green-400 border-green-500/20",
-    off: "bg-red-500/15 text-red-400 border-red-500/20",
+    on: "bg-[#1a2d1a] text-green-400 border-[#1f4a1f]",
+    off: "bg-[#2d1a1a] text-red-400 border-[#4a1f1f]",
   };
-  const badgeClass = statusBadge[liveStatus] ?? "bg-yellow-500/15 text-yellow-400 border-yellow-500/20";
+  const badgeClass = statusBadge[liveStatus] ?? "bg-[#2a2318] text-yellow-400 border-[#4a401f]";
 
   const isTransitional = TRANSITIONAL_STATUSES.has(liveStatus);
 
@@ -147,7 +147,7 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
         <div className="flex items-center gap-1.5 flex-shrink-0">
           {autoRefreshing && <RefreshCw size={10} className="text-[#10a37f] animate-spin" />}
           {isTransitional && !autoRefreshing && (
-            <span className="text-[10px] text-[#10a37f]/70 animate-pulse">обновляется</span>
+            <span className="text-[10px] text-[#0d8068] animate-pulse">обновляется</span>
           )}
           <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${badgeClass}`}>
             {liveStatusLabel}
@@ -220,7 +220,7 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
 
       {/* Inline confirmation */}
       {confirmAction && (
-        <div className="mx-3 mb-3 mt-2 bg-red-900/20 border border-red-700/40 rounded-xl p-3 flex flex-col gap-2">
+        <div className="mx-3 mb-3 mt-2 bg-[#2d1a1a] border border-[#6b2929] rounded-xl p-3 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-red-300 text-sm font-medium">
             <AlertTriangle size={14} />
             {confirmAction === "shutdown"
@@ -229,13 +229,13 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
           </div>
           {confirmAction === "delete" && (
             <>
-              <p className="text-xs text-red-400/80">Это необратимо. Введите имя сервера:</p>
+              <p className="text-xs text-red-400">Это необратимо. Введите имя сервера:</p>
               <input
                 type="text"
                 value={deleteInput}
                 onChange={(e) => setDeleteInput(e.target.value)}
                 placeholder={server.name}
-                className="bg-[#1a1a1a] border border-red-700/40 rounded-lg px-3 py-1.5 text-sm text-[#ececec] placeholder-[#555] focus:outline-none focus:border-red-500/60 font-mono"
+                className="bg-[#1a1a1a] border border-[#6b2929] rounded-lg px-3 py-1.5 text-sm text-[#ececec] placeholder-[#555] focus:outline-none focus:border-red-500 font-mono"
               />
             </>
           )}
@@ -249,7 +249,7 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
             <button
               onClick={handleConfirm}
               disabled={!deleteConfirmEnabled}
-              className="flex-1 text-xs px-3 py-1.5 rounded-lg bg-red-700/80 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
+              className="flex-1 text-xs px-3 py-1.5 rounded-lg bg-[#b02a2a] hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed text-white transition-colors"
             >
               {confirmAction === "shutdown" ? "Выключить" : "Удалить"}
             </button>
@@ -320,8 +320,8 @@ interface ActionButtonProps {
 function ActionButton({ icon, label, onClick, variant = "default", fullWidth }: ActionButtonProps) {
   const colors = {
     default: "bg-[#252525] hover:bg-[#2f2f2f] text-[#8e8ea0] hover:text-[#ececec]",
-    danger: "bg-[#252525] hover:bg-red-900/20 text-[#8e8ea0] hover:text-red-300",
-    success: "bg-[#252525] hover:bg-green-900/20 text-[#8e8ea0] hover:text-green-300",
+    danger: "bg-[#252525] hover:bg-[#2d1a1a] text-[#8e8ea0] hover:text-red-300",
+    success: "bg-[#252525] hover:bg-[#1a2d1a] text-[#8e8ea0] hover:text-green-300",
   };
   return (
     <button
