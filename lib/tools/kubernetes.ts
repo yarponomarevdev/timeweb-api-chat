@@ -166,28 +166,35 @@ export function createKubernetesTools(token: string) {
         "Получить доступные версии Kubernetes и сетевые драйверы",
       inputSchema: z.object({}),
       execute: async () => {
-        const [versions, drivers, presets] = await Promise.all([
+        const [versionsResult, driversResult, presetsResult] = await Promise.allSettled([
           tw.listK8sVersions(token),
           tw.listK8sNetworkDrivers(token),
           tw.listK8sPresets(token),
         ]);
+
+        const errors: string[] = [];
+        if (versionsResult.status === "rejected") errors.push("версии K8s недоступны");
+        if (driversResult.status === "rejected") errors.push("сетевые драйверы недоступны");
+        if (presetsResult.status === "rejected") errors.push("тарифы K8s недоступны");
+
         return {
-          versions: versions.map((v) => ({
-            version: v.version,
-            is_default: v.is_default,
-          })),
-          network_drivers: drivers.map((d) => ({
-            driver: d.driver,
-            description: d.description,
-          })),
-          presets: presets.map((p) => ({
-            id: p.id,
-            description: p.description,
-            cpu: p.cpu,
-            ram_gb: Math.round(p.ram / 1024),
-            disk_gb: p.disk,
-            price_per_month: p.price,
-          })),
+          versions: versionsResult.status === "fulfilled"
+            ? versionsResult.value.map((v) => ({ version: v.version, is_default: v.is_default }))
+            : [],
+          network_drivers: driversResult.status === "fulfilled"
+            ? driversResult.value.map((d) => ({ driver: d.driver, description: d.description }))
+            : [],
+          presets: presetsResult.status === "fulfilled"
+            ? presetsResult.value.map((p) => ({
+                id: p.id,
+                description: p.description,
+                cpu: p.cpu,
+                ram_gb: Math.round(p.ram / 1024),
+                disk_gb: p.disk,
+                price_per_month: p.price,
+              }))
+            : [],
+          ...(errors.length > 0 ? { warning: `Часть данных недоступна: ${errors.join(", ")}` } : {}),
         };
       },
     }),
