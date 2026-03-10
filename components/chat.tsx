@@ -414,7 +414,7 @@ export function Chat({
               {/* Сменить ключи */}
               <button
                 onClick={onChangeToken}
-                className="absolute bottom-5 right-5 text-xs text-[#555] hover:text-[#8e8ea0] transition-colors"
+                className="absolute bottom-5 left-5 text-xs text-[#555] hover:text-[#8e8ea0] transition-colors"
               >
                 Изменить API-ключ
               </button>
