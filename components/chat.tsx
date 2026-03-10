@@ -410,6 +410,14 @@ export function Chat({
               <div className="mt-4">
                 <SuggestionChips onSelect={setInput} />
               </div>
+
+              {/* Сменить ключи */}
+              <button
+                onClick={onChangeToken}
+                className="absolute bottom-5 right-5 text-xs text-[#555] hover:text-[#8e8ea0] transition-colors"
+              >
+                Изменить API-ключ
+              </button>
             </motion.div>
           )}
         </AnimatePresence>
