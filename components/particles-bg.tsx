@@ -10,6 +10,11 @@ interface ParticlesBgProps {
 export function ParticlesBg({ active }: ParticlesBgProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animFrameRef = useRef<number>(0);
+  const activeRef = useRef(active);
+
+  useEffect(() => {
+    activeRef.current = active;
+  }, [active]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -69,14 +74,21 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
         material.dispose();
       };
 
+      // Хранение начальных позиций для ограниченного колебания
+      const initialPositions = new Float32Array(positions);
+
       let frame = 0;
       const tick = () => {
         if (!mounted) return;
-        frame++;
+        if (!activeRef.current) {
+          animFrameRef.current = requestAnimationFrame(tick);
+          return;
+        }
+        frame = (frame + 1) % 10000;
         const pos = geometry.attributes.position as THREE.BufferAttribute;
         for (let i = 0; i < count; i++) {
-          (pos.array as Float32Array)[i * 3 + 1] += Math.sin(frame * speeds[i] + offsets[i]) * 0.012;
-          (pos.array as Float32Array)[i * 3] += Math.cos(frame * speeds[i] * 0.7 + offsets[i]) * 0.006;
+          (pos.array as Float32Array)[i * 3] = initialPositions[i * 3] + Math.cos(frame * speeds[i] * 0.7 + offsets[i]) * 3;
+          (pos.array as Float32Array)[i * 3 + 1] = initialPositions[i * 3 + 1] + Math.sin(frame * speeds[i] + offsets[i]) * 2;
         }
         pos.needsUpdate = true;
         points.rotation.y += 0.0003;
