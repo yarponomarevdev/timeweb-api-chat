@@ -223,8 +223,7 @@ export function Chat({
   }, [hasMessages]);
 
   const handleClearChat = useCallback(() => {
-    setChatVisible(false);           // запускает exit-анимации
-    setTimeout(() => setMessages([]), 380); // очищаем после их завершения
+    setMessages([]);
   }, [setMessages]);
 
   return (
@@ -304,12 +303,13 @@ export function Chat({
               </button>
 
               <motion.h1
-                className="text-2xl font-bold text-[#ececec] mb-2 text-center"
+                className="text-5xl font-extrabold mb-2 text-center tracking-tight"
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: 0.06 }}
               >
-                evolvin.cloud
+                <span className="text-[#10a37f]">evolvin</span>
+                <span className="text-[#ececec]">.cloud</span>
               </motion.h1>
               <motion.p
                 className="text-[#8e8ea0] text-sm mb-8 text-center"
@@ -331,7 +331,7 @@ export function Chat({
                   onInputChange={handleInputChange}
                   onSubmit={onSubmit}
                   hasMessages={false}
-                  isCentered={true}
+                  isCentered={false}
                 />
               </motion.div>
 
@@ -404,70 +404,75 @@ export function Chat({
                 </div>
               </motion.header>
 
-              {/* Область сообщений */}
-              <motion.div
-                ref={scrollContainerRef}
-                className="flex-1 overflow-y-auto min-h-0"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.08 }}
-              >
-                <div className="max-w-2xl mx-auto px-4 py-6">
-                  {messages.map((m, i) => {
-                    const userText = m.parts?.find((p) => isTextUIPart(p))?.text ?? "";
-                    const isLastAssistantMessage = m.role === "assistant" && i === lastAssistantIndex;
-                    return (
-                      <Message
-                        key={m.id}
-                        message={m}
-                        onRetry={
-                          m.role === "user" && !isLoading
-                            ? () => handleRetry(i, userText)
-                            : undefined
-                        }
-                        onSendMessage={!isLoading ? handleQuickAction : undefined}
-                        timewebToken={timewebToken}
-                        showSuggestions={isLastAssistantMessage}
-                      />
-                    );
-                  })}
-                  {isLoading && !errorMsg && (
-                    <div className="flex items-center gap-1.5 text-[#8e8ea0] py-4 pl-1">
-                      <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce" />
-                      <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.3s]" />
-                      <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.5s]" />
-                    </div>
-                  )}
-                  {(errorMsg || retryAfter > 0) && (
-                    <div className="flex items-center justify-between gap-3 bg-[#2d1a1a] border border-[#5a2d2d] rounded-xl px-4 py-3 my-2 text-sm text-red-300">
-                      <span>
-                        {retryAfter > 0
-                          ? `Запросы временно ограничены. Следующий запрос через ${retryAfter} сек.`
-                          : errorMsg}
-                      </span>
-                      <button
-                        onClick={() => { setErrorMsg(null); setRetryAfter(0); }}
-                        className="text-red-400 hover:text-red-200 transition-colors flex-shrink-0"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  )}
-                  <div ref={messagesEndRef} />
-                </div>
-              </motion.div>
+              {/* Область сообщений — видна только при наличии сообщений */}
+              {messages.length > 0 && (
+                <motion.div
+                  ref={scrollContainerRef}
+                  className="flex-1 overflow-y-auto min-h-0"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.08 }}
+                >
+                  <div className="max-w-2xl mx-auto px-4 py-6">
+                    {messages.map((m, i) => {
+                      const userText = m.parts?.find((p) => isTextUIPart(p))?.text ?? "";
+                      const isLastAssistantMessage = m.role === "assistant" && i === lastAssistantIndex;
+                      return (
+                        <Message
+                          key={m.id}
+                          message={m}
+                          onRetry={
+                            m.role === "user" && !isLoading
+                              ? () => handleRetry(i, userText)
+                              : undefined
+                          }
+                          onSendMessage={!isLoading ? handleQuickAction : undefined}
+                          timewebToken={timewebToken}
+                          showSuggestions={isLastAssistantMessage}
+                        />
+                      );
+                    })}
+                    {isLoading && !errorMsg && (
+                      <div className="flex items-center gap-1.5 text-[#8e8ea0] py-4 pl-1">
+                        <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce" />
+                        <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.3s]" />
+                        <div className="w-1.5 h-1.5 bg-[#8e8ea0] rounded-full animate-bounce [animation-delay:-.5s]" />
+                      </div>
+                    )}
+                    {(errorMsg || retryAfter > 0) && (
+                      <div className="flex items-center justify-between gap-3 bg-[#2d1a1a] border border-[#5a2d2d] rounded-xl px-4 py-3 my-2 text-sm text-red-300">
+                        <span>
+                          {retryAfter > 0
+                            ? `Запросы временно ограничены. Следующий запрос через ${retryAfter} сек.`
+                            : errorMsg}
+                        </span>
+                        <button
+                          onClick={() => { setErrorMsg(null); setRetryAfter(0); }}
+                          className="text-red-400 hover:text-red-200 transition-colors flex-shrink-0"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                </motion.div>
+              )}
 
-              {/* Нижняя панель */}
+              {/* Панель ввода — единый элемент, плавно перемещается между низом и центром */}
               <motion.div
-                className="flex-shrink-0 px-4 pb-4 pt-2 relative z-[2]"
-                initial={{ opacity: 0, y: 16 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.12, ease: [0.4, 0, 0.2, 1] }}
+                layout
+                className={messages.length > 0
+                  ? "flex-shrink-0 px-4 pb-4 pt-2 relative z-[2]"
+                  : "flex-1 flex flex-col items-center justify-center px-4 relative z-[2]"
+                }
+                transition={{ type: "spring", stiffness: 170, damping: 26 }}
               >
                 <motion.div
+                  layout
                   layoutId="chat-input-area"
-                  className="max-w-2xl mx-auto"
-                  transition={{ type: "spring", stiffness: 220, damping: 30 }}
+                  className={messages.length > 0 ? "max-w-2xl mx-auto" : "w-full max-w-2xl"}
+                  transition={{ type: "spring", stiffness: 170, damping: 26 }}
                 >
                   <ChatInput
                     input={input}
@@ -477,14 +482,25 @@ export function Chat({
                     isCentered={false}
                   />
                 </motion.div>
-                <div className="max-w-2xl mx-auto flex justify-center pt-1.5">
-                  <button
-                    onClick={handleClearChat}
-                    className="text-xs text-[#444] hover:text-[#8e8ea0] transition-colors"
+                {messages.length > 0 ? (
+                  <div className="max-w-2xl mx-auto flex justify-center pt-1.5">
+                    <button
+                      onClick={handleClearChat}
+                      className="text-xs text-[#444] hover:text-[#8e8ea0] transition-colors"
+                    >
+                      Очистить чат
+                    </button>
+                  </div>
+                ) : (
+                  <motion.div
+                    className="mt-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.25, delay: 0.3 }}
                   >
-                    Очистить чат
-                  </button>
-                </div>
+                    <SuggestionChips onSelect={handleQuickAction} />
+                  </motion.div>
+                )}
               </motion.div>
             </motion.div>
 

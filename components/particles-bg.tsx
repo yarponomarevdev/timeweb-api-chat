@@ -36,11 +36,11 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
       const camera = new THREE.PerspectiveCamera(60, canvas.clientWidth / canvas.clientHeight, 1, 500);
       camera.position.z = 60;
 
-      const count = 100;
+      const count = 160;
       const positions = new Float32Array(count * 3);
       for (let i = 0; i < count; i++) {
-        positions[i * 3]     = (Math.random() - 0.5) * 80;  // X: ±40
-        positions[i * 3 + 1] = (Math.random() - 0.5) * 50;  // Y: ±25
+        positions[i * 3]     = (Math.random() - 0.5) * 140; // X: ±70 (весь экран)
+        positions[i * 3 + 1] = (Math.random() - 0.5) * 90;  // Y: ±45 (весь экран)
         positions[i * 3 + 2] = (Math.random() - 0.5) * 20;  // Z: ±10 (далеко от камеры)
       }
 
@@ -129,7 +129,7 @@ export function ParticlesBg({ active }: ParticlesBgProps) {
   return (
     <canvas
       ref={canvasRef}
-      className="absolute inset-0 w-full h-full pointer-events-none"
+      className="fixed inset-0 w-full h-full pointer-events-none"
       style={{
         zIndex: 0,
         opacity: active ? 1 : 0,

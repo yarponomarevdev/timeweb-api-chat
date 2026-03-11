@@ -241,7 +241,7 @@ export function Sidebar({ onAction, onChangeToken, onClose, onOpenServers, onOpe
       {/* Шапка */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-[#2a2a2a] flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-sm text-[#ececec]">evolvin.cloud</span>
+          <span className="font-extrabold text-lg tracking-tight"><span className="text-[#10a37f]">evolvin</span><span className="text-[#ececec]">.cloud</span></span>
         </div>
         {onClose && (
           <button
