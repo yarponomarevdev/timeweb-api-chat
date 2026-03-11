@@ -6,8 +6,8 @@ export async function listDomains(token: string): Promise<TimewebDomain[]> {
   return data.domains ?? [];
 }
 
-export async function getDomain(token: string, id: number): Promise<TimewebDomain> {
-  const data = await apiRequest<{ domain: TimewebDomain }>(`/domains/${id}`, token);
+export async function getDomain(token: string, fqdn: string): Promise<TimewebDomain> {
+  const data = await apiRequest<{ domain: TimewebDomain }>(`/domains/${fqdn}`, token);
   return data.domain;
 }
 
@@ -22,6 +22,6 @@ export async function createDomain(
   return data.domain;
 }
 
-export async function deleteDomain(token: string, id: number): Promise<null> {
-  return apiRequest(`/domains/${id}`, token, { method: "DELETE" });
+export async function deleteDomain(token: string, fqdn: string): Promise<null> {
+  return apiRequest(`/domains/${fqdn}`, token, { method: "DELETE" });
 }

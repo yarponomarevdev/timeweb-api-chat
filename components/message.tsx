@@ -22,9 +22,11 @@ import type {
   CreateSSHKeyOutput,
   DeleteSSHKeyOutput,
   ResizeServerOutput,
+  DiskSummary,
   BackupSummary,
   CreateBackupOutput,
   RestoreBackupOutput,
+  DeleteBackupOutput,
   ServerStatsOutput,
   FirewallGroupSummary,
   CreateFirewallOutput,
@@ -69,10 +71,12 @@ const TOOL_SUGGESTIONS: Record<string, string[]> = {
   create_ssh_key: ["Показать SSH-ключи", "Создать сервер"],
   delete_ssh_key: ["Показать SSH-ключи", "Создать сервер"],
 
-  // Бэкапы
+  // Бэкапы и диски
+  list_server_disks: ["Создать бэкап", "Показать бэкапы сервера", "Показать мои серверы"],
   list_backups: ["Создать бэкап сервера", "Восстановить сервер из бэкапа", "Показать мои серверы"],
   create_backup: ["Показать бэкапы сервера", "Показать мои серверы"],
   restore_backup: ["Показать мои серверы", "Показать бэкапы сервера"],
+  delete_backup: ["Показать бэкапы сервера", "Показать мои серверы"],
 
   // Статистика
   get_server_stats: ["Показать сервер", "Создать бэкап сервера", "Перезагрузить сервер"],
@@ -156,7 +160,11 @@ const RICH_TOOL_OUTPUTS = new Set([
   "list_presets",
   "list_os",
   "list_ssh_keys",
+  "list_server_disks",
   "list_backups",
+  "create_backup",
+  "restore_backup",
+  "delete_backup",
   "list_firewalls",
   "software",
   "get_balance",
@@ -483,6 +491,46 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                   );
                 }
 
+                if (toolName === "list_server_disks") {
+                  const disks = part.output as DiskSummary[];
+                  if (disks.length === 0) {
+                    return (
+                      <div key={index} className="text-sm text-[#8e8ea0] my-2">
+                        У сервера нет дисков.
+                      </div>
+                    );
+                  }
+                  return (
+                    <div key={index} className="w-full my-2 overflow-x-auto rounded-xl border border-[#3a3a3a]">
+                      <table className="w-full text-sm text-[#ececec]">
+                        <thead>
+                          <tr className="bg-[#171717] text-[#8e8ea0] text-xs uppercase tracking-wide">
+                            <th className="text-left px-4 py-3 font-medium">Имя</th>
+                            <th className="text-left px-4 py-3 font-medium">Тип</th>
+                            <th className="text-center px-3 py-3 font-medium">Размер</th>
+                            <th className="text-center px-3 py-3 font-medium">Занято</th>
+                            <th className="text-center px-3 py-3 font-medium">Авто-бэкап</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {disks.map((d, i) => (
+                            <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
+                              <td className="px-4 py-2.5">
+                                {d.system_name}
+                                {d.is_system && <span className="ml-2 text-[10px] bg-[#10a37f]/20 text-[#10a37f] px-1.5 py-0.5 rounded">системный</span>}
+                              </td>
+                              <td className="px-4 py-2.5 text-[#8e8ea0] uppercase text-xs">{d.type}</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{d.size_gb} ГБ</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{d.used_gb} ГБ</td>
+                              <td className="px-3 py-2.5 text-center">{d.auto_backup ? "✓" : "—"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                }
+
                 if (toolName === "list_backups") {
                   const backups = part.output as BackupSummary[];
                   if (backups.length === 0) {
@@ -498,18 +546,26 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                         <thead>
                           <tr className="bg-[#171717] text-[#8e8ea0] text-xs uppercase tracking-wide">
                             <th className="text-left px-4 py-3 font-medium">ID</th>
-                            <th className="text-left px-4 py-3 font-medium">Название</th>
+                            <th className="text-center px-3 py-3 font-medium">Статус</th>
+                            <th className="text-center px-3 py-3 font-medium">Тип</th>
                             <th className="text-center px-3 py-3 font-medium">Размер</th>
                             <th className="text-left px-4 py-3 font-medium">Создан</th>
+                            <th className="text-left px-4 py-3 font-medium">Комментарий</th>
                           </tr>
                         </thead>
                         <tbody>
                           {backups.map((b, i) => (
                             <tr key={i} className={`border-t border-[#3a3a3a] ${i % 2 === 0 ? "bg-[#2f2f2f]" : "bg-[#252525]"}`}>
                               <td className="px-4 py-2.5 font-mono text-[#8e8ea0]">{b.id}</td>
-                              <td className="px-4 py-2.5">{b.name || "—"}</td>
-                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{b.size_mb} MB</td>
+                              <td className="px-3 py-2.5 text-center">
+                                <span className={`inline-block px-2 py-0.5 rounded text-xs ${b.status === "done" ? "bg-[#10a37f]/20 text-[#10a37f]" : b.status === "precreate" ? "bg-yellow-500/20 text-yellow-400" : "bg-[#3a3a3a] text-[#8e8ea0]"}`}>
+                                  {b.status === "done" ? "готов" : b.status === "precreate" ? `${b.progress}%` : b.status}
+                                </span>
+                              </td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0] text-xs">{b.type === "auto" ? "авто" : "ручной"}</td>
+                              <td className="px-3 py-2.5 text-center text-[#8e8ea0]">{b.size_mb} МБ</td>
                               <td className="px-4 py-2.5 text-[#8e8ea0] text-xs">{new Date(b.created_at).toLocaleString("ru")}</td>
+                              <td className="px-4 py-2.5 text-[#8e8ea0] text-xs max-w-[120px] truncate">{b.comment || "—"}</td>
                             </tr>
                           ))}
                         </tbody>
@@ -529,6 +585,15 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
 
                 if (toolName === "restore_backup") {
                   const output = part.output as RestoreBackupOutput;
+                  return (
+                    <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
+                      {output.message}
+                    </div>
+                  );
+                }
+
+                if (toolName === "delete_backup") {
+                  const output = part.output as DeleteBackupOutput;
                   return (
                     <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${output.success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
                       {output.message}

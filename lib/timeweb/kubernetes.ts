@@ -84,12 +84,12 @@ export async function getKubeconfig(token: string, clusterId: number): Promise<s
 }
 
 export async function listK8sVersions(token: string): Promise<TimewebK8sVersion[]> {
-  const data = await apiRequest<{ k8s_versions: TimewebK8sVersion[] }>("/k8s/k8s_versions", token);
+  const data = await apiRequest<{ k8s_versions: TimewebK8sVersion[] }>("/k8s/k8s-versions", token);
   return data.k8s_versions ?? [];
 }
 
 export async function listK8sNetworkDrivers(token: string): Promise<TimewebK8sNetworkDriver[]> {
-  const data = await apiRequest<{ network_drivers: TimewebK8sNetworkDriver[] }>("/k8s/network_drivers", token);
+  const data = await apiRequest<{ network_drivers: TimewebK8sNetworkDriver[] }>("/k8s/network-drivers", token);
   return data.network_drivers ?? [];
 }
 

@@ -29,15 +29,13 @@ export function createDomainTools(token: string) {
         is_autoprolong: z.boolean().optional().describe("Автопродление (для create)"),
       }),
       execute: async (input) => {
-        const resolveDomainId = async () => {
-          if (input.domain_id) return input.domain_id;
-          if (!input.domain_name) throw new Error("Нужен domain_id или domain_name");
+        const resolveDomainFqdn = async () => {
+          if (input.domain_name) return input.domain_name;
+          if (!input.domain_id) throw new Error("Нужен domain_id или domain_name");
           const domains = await tw.listDomains(token);
-          const found = domains.find(
-            (d) => (d.fqdn || d.name).toLowerCase() === input.domain_name!.toLowerCase()
-          );
-          if (!found) throw new Error(`Домен "${input.domain_name}" не найден`);
-          return found.id;
+          const found = domains.find((d) => d.id === input.domain_id);
+          if (!found) throw new Error(`Домен с ID ${input.domain_id} не найден`);
+          return found.fqdn || found.name;
         };
 
         switch (input.action) {
@@ -53,8 +51,8 @@ export function createDomainTools(token: string) {
             }));
           }
           case "get": {
-            const domainId = await resolveDomainId();
-            const d = await tw.getDomain(token, domainId);
+            const fqdn = await resolveDomainFqdn();
+            const d = await tw.getDomain(token, fqdn);
             return {
               id: d.id,
               name: d.fqdn || d.name,
@@ -78,11 +76,11 @@ export function createDomainTools(token: string) {
             };
           }
           case "delete": {
-            const domainId = await resolveDomainId();
-            await tw.deleteDomain(token, domainId);
+            const fqdn = await resolveDomainFqdn();
+            await tw.deleteDomain(token, fqdn);
             return {
               success: true,
-              message: `Домен ${domainId} удалён`,
+              message: `Домен ${fqdn} удалён`,
             };
           }
         }

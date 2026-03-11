@@ -21,9 +21,11 @@ export async function apiRequest<T>(
   version: "v1" | "v2" = "v1"
 ): Promise<T> {
   const base = version === "v2" ? BASE_V2 : BASE_V1;
-  // Retry делаем только для read-only запросов, чтобы избежать дублей
-  const isReadOnly = !options.method || options.method === "GET";
-  const maxAttempts = isReadOnly ? RETRY_ATTEMPTS : 1;
+  // Retry для read-only запросов и для серверных ошибок (502/503/504) на write-запросах
+  const method = options.method?.toUpperCase() ?? "GET";
+  const isReadOnly = method === "GET" || method === "HEAD";
+  // Write-запросы тоже ретраим при 502/503/504 — это серверные ошибки до обработки запроса
+  const maxAttempts = RETRY_ATTEMPTS;
 
   let lastError: Error = new Error("Unknown error");
 

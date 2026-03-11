@@ -47,9 +47,11 @@ export type {
 } from "./ssh-keys";
 
 export type {
+  DiskSummary,
   BackupSummary,
   CreateBackupOutput,
   RestoreBackupOutput,
+  DeleteBackupOutput,
 } from "./backups";
 
 export type {

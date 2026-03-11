@@ -67,8 +67,9 @@ export async function attachFirewallToServer(
   firewallId: string,
   serverId: number
 ): Promise<null> {
-  return apiRequest(`/firewall/groups/${firewallId}/resources/servers`, token, {
-    method: "POST",
-    body: JSON.stringify({ resource_id: String(serverId) }),
-  });
+  return apiRequest(
+    `/firewall/groups/${firewallId}/resources/${serverId}?resource_type=server`,
+    token,
+    { method: "POST" }
+  );
 }

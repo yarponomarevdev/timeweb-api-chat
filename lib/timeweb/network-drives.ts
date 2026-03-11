@@ -31,12 +31,12 @@ export async function mountNetworkDrive(
   id: number,
   serverId: number
 ): Promise<null> {
-  return apiRequest(`/network-drives/${id}/bind`, token, {
+  return apiRequest(`/network-drives/${id}/mount`, token, {
     method: "POST",
     body: JSON.stringify({ resource_id: serverId, resource_type: "server" }),
   });
 }
 
 export async function unmountNetworkDrive(token: string, id: number): Promise<null> {
-  return apiRequest(`/network-drives/${id}/unbind`, token, { method: "POST" });
+  return apiRequest(`/network-drives/${id}/unmount`, token, { method: "POST" });
 }

@@ -10,8 +10,12 @@ export interface TimewebDisk {
   size: number;
   used: number;
   type: string;
-  system: boolean;
+  is_mounted: boolean;
+  is_system: boolean;
   status: string;
+  system_name: string;
+  is_auto_backup: boolean;
+  comment: string;
 }
 
 export interface TimewebOS {

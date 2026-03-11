@@ -40,9 +40,9 @@ export async function addResourceToProject(
   resourceId: number,
   resourceType: string
 ): Promise<null> {
-  return apiRequest(`/projects/${projectId}/resources`, token, {
+  return apiRequest(`/projects/${projectId}/resources/${resourceType}s`, token, {
     method: "POST",
-    body: JSON.stringify({ resource_id: resourceId, resource_type: resourceType }),
+    body: JSON.stringify({ resource_id: resourceId }),
   });
 }
 
@@ -52,8 +52,8 @@ export async function removeResourceFromProject(
   resourceId: number,
   resourceType: string
 ): Promise<null> {
-  return apiRequest(`/projects/${projectId}/resources`, token, {
+  return apiRequest(`/projects/${projectId}/resources/${resourceType}s`, token, {
     method: "DELETE",
-    body: JSON.stringify({ resource_id: resourceId, resource_type: resourceType }),
+    body: JSON.stringify({ resource_id: resourceId }),
   });
 }

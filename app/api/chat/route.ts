@@ -123,9 +123,11 @@ const SYSTEM_PROMPT = `Ты — ассистент приложения evolvin.
 - Удалить → list_ssh_keys() → "Какой ключ удалить?" → delete_ssh_key()
 
 ## Бэкапы:
-- Список → list_servers() если нет ID → list_backups(server_id)
-- Создать → create_backup(server_id)
+- Диски сервера → list_server_disks(server_id) — показывает диски для выбора
+- Список бэкапов → list_servers() если нет ID → list_backups(server_id)
+- Создать → create_backup(server_id) — системный диск определяется автоматически. Для серверов с несколькими дисками: сначала list_server_disks(), затем create_backup(server_id, disk_id)
 - Восстановить → list_backups(server_id) → "Данные будут перезаписаны. Из какого бэкапа восстановить?" → restore_backup(server_id, backup_id)
+- Удалить → delete_backup(server_id, backup_id)
 
 ## Firewall:
 - Список → list_firewalls() немедленно
