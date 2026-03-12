@@ -39,7 +39,7 @@ export function Chat({
     return () => clearInterval(timer);
   }, [retryAfter]);
 
-  const { messages, sendMessage, status, setMessages } = useChat({
+  const { messages, sendMessage, status, setMessages, stop } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: { timewebToken, openaiKey },
@@ -152,14 +152,15 @@ export function Chat({
     }
   }, [messages]);
 
-  // Таймаут 60 секунд — если AI завис, показываем ошибку
+  // Таймаут 60 секунд — если AI завис, останавливаем стриминг и показываем ошибку
   React.useEffect(() => {
     if (!isLoading) return;
     const timer = setTimeout(() => {
+      stop();
       setErrorMsg("Превышено время ожидания. Попробуйте ещё раз.");
     }, 60_000);
     return () => clearTimeout(timer);
-  }, [isLoading]);
+  }, [isLoading, stop]);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -223,8 +224,9 @@ export function Chat({
   }, [hasMessages]);
 
   const handleClearChat = useCallback(() => {
+    stop();
     setMessages([]);
-  }, [setMessages]);
+  }, [stop, setMessages]);
 
   return (
     <div className="flex bg-[#212121] overflow-hidden" style={{ height: "100dvh" }}>
