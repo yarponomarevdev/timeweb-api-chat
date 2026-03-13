@@ -35,7 +35,20 @@ export function createDatabaseTools(token: string) {
           password,
           preset_id: preset_id ?? 1,
         });
-        return { database: { id: db.id, name: db.name, type: db.type, status: db.status } };
+        return {
+          database: {
+            id: db.id,
+            name: db.name,
+            type: db.type,
+            status: db.status,
+            host: db.host ?? db.external_hostname,
+            port: db.port,
+            login: db.login ?? name,
+            password,
+            ip: db.ip,
+            location: db.location,
+          },
+        };
       },
     }),
     databases: tool({
@@ -98,6 +111,12 @@ export function createDatabaseTools(token: string) {
               name: d.name,
               type: d.type,
               status: d.status,
+              host: d.host ?? d.external_hostname,
+              port: d.port,
+              login: d.login ?? input.name!,
+              password: input.password!,
+              ip: d.ip,
+              location: d.location,
               message: `База данных "${d.name}" создаётся`,
             };
           }

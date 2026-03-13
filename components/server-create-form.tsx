@@ -98,12 +98,7 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   // Форма уже отправлена — показываем компактный статус вместо полной формы
   if (isDone) {
     if (!isCreating) return null; // отменено
-    return (
-      <div className="bg-[#252525] rounded-xl border border-[#333] px-4 py-3 my-2 text-sm text-[#8e8ea0] flex items-center gap-2">
-        <div className="w-3.5 h-3.5 rounded-full border-2 border-t-[#10a37f] border-[#3a3a3a] animate-spin flex-shrink-0" />
-        <span>Создание сервера <span className="text-[#ececec] font-medium">{server_name}</span> запущено...</span>
-      </div>
-    );
+    return null; // результат отобразится в карточке create_server ниже
   }
 
   return (

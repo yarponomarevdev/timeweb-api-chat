@@ -73,6 +73,9 @@ export function createAppTools(token: string) {
               id: a.id,
               name: a.name,
               status: a.status,
+              framework: a.framework,
+              domains: a.domains,
+              location: a.location,
               message: `Приложение "${a.name}" создаётся`,
             };
           }

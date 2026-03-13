@@ -22,7 +22,7 @@ export interface ServerSummaryWithNetworks extends ServerSummary {
   networks: import("@/types/timeweb").TimewebServer["networks"];
 }
 
-export interface CreateServerSuccess extends ServerSummary {
+export interface CreateServerSuccess extends ServerSummaryWithNetworks {
   message: string;
 }
 
@@ -163,7 +163,7 @@ export function createServerTools(token: string) {
         const bandwidth = finalPreset?.bandwidth ?? 1000;
         const finalPresetId = finalPreset?.id ?? preset_id;
 
-        const server = await tw.createServer(token, {
+        let server = await tw.createServer(token, {
           name,
           ...(os_id ? { os_id } : {}),
           ...(software_id ? { software_id } : {}),
@@ -179,6 +179,21 @@ export function createServerTools(token: string) {
           };
         }
 
+        // IP может не прийти сразу — пробуем получить через getServer
+        const hasIp = server.networks?.some((n) => n.ips?.some((ip) => ip.ip));
+        if (!hasIp && server.id) {
+          for (let attempt = 0; attempt < 3; attempt++) {
+            await new Promise((r) => setTimeout(r, 2000));
+            try {
+              const fresh = await tw.getServer(token, server.id);
+              if (fresh.networks?.some((n) => n.ips?.some((ip) => ip.ip))) {
+                server = fresh;
+                break;
+              }
+            } catch { /* игнорируем ошибки retry */ }
+          }
+        }
+
         return {
           id: server.id,
           name: server.name,
@@ -192,7 +207,8 @@ export function createServerTools(token: string) {
           disk_gb: tw.getServerDiskGB(server),
           created_at: server.created_at,
           location: availability_zone ?? finalPreset?.location ?? server.location,
-          message: "Сервер создаётся, обычно занимает 1–3 минуты",
+          networks: server.networks,
+          message: "Сервер создаётся, обычно занимает 1–3 минуты.",
         };
       },
     }),
@@ -237,14 +253,18 @@ export function createServerTools(token: string) {
           reset_password: "сброс пароля",
           reinstall: "переустановка",
         };
+        const baseMessage = result.result
+          ? `Действие «${actionLabels[action]}» выполнено успешно`
+          : `Не удалось выполнить действие «${actionLabels[action]}»`;
+        const extraInfo = action === "reset_password" && result.result
+          ? ". Новый пароль отправлен на email аккаунта Timeweb."
+          : "";
         return {
           success: result.result,
           action,
           action_label: actionLabels[action] ?? action,
           server_id,
-          message: result.result
-            ? `Действие «${actionLabels[action]}» выполнено успешно`
-            : `Не удалось выполнить действие «${actionLabels[action]}»`,
+          message: baseMessage + extraInfo,
         };
       },
     }),

@@ -77,6 +77,11 @@ export function createBucketTools(token: string) {
               id: b.id,
               name: b.name,
               type: b.type,
+              hostname: b.hostname,
+              access_key: b.access_key,
+              secret_key: b.secret_key,
+              location: b.location,
+              s3_endpoint: `https://s3.timeweb.cloud`,
               message: `Бакет "${b.name}" создан`,
             };
           }

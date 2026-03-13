@@ -84,7 +84,9 @@ export function createKubernetesTools(token: string) {
               name: c.name,
               status: c.status,
               k8s_version: c.k8s_version,
-              message: "Кластер Kubernetes создаётся, обычно занимает несколько минут",
+              network_driver: c.network_driver,
+              region: c.region,
+              message: "Кластер Kubernetes создаётся, обычно занимает несколько минут. Для получения kubeconfig используйте k8s_kubeconfig после готовности кластера.",
             };
           }
           case "delete": {

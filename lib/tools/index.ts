@@ -26,6 +26,7 @@ export type {
   ServerSummary,
   ServerSummaryWithNetworks,
   CreateServerOutput,
+  CreateServerSuccess,
   DeleteServerOutput,
   ServerActionOutput,
   ResizeServerOutput,

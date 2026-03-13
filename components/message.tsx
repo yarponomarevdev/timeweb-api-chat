@@ -8,10 +8,21 @@ import remarkGfm from "remark-gfm";
 import { RotateCcw } from "lucide-react";
 import { ServerCard } from "./server-card";
 import { ServerCreateForm } from "./server-create-form";
+import {
+  ConnectionInfo,
+  type ConnectionField,
+  serverConnectionFields,
+  databaseConnectionFields,
+  mailConnectionFields,
+  bucketConnectionFields,
+  k8sConnectionFields,
+  hasConnectionData,
+} from "./connection-info";
 import type {
   ServerSummary,
   ServerSummaryWithNetworks,
   CreateServerOutput,
+  CreateServerSuccess,
   DeleteServerOutput,
   ServerActionOutput,
   ProposeServerOutput,
@@ -316,7 +327,14 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                       </div>
                     );
                   }
-                  return <ServerCard key={index} server={output as ServerSummary} onAction={onSendMessage} timewebToken={timewebToken} />;
+                  const success = output as CreateServerSuccess;
+                  const connFields = serverConnectionFields(success as unknown as Record<string, unknown>);
+                  return (
+                    <div key={index} className="flex flex-col gap-2 w-full">
+                      <ServerCard server={success} onAction={onSendMessage} timewebToken={timewebToken} />
+                      <ConnectionInfo fields={connFields} />
+                    </div>
+                  );
                 }
 
                 if (toolName === "get_balance") {
@@ -698,20 +716,23 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                 }
 
                 if (toolName === "list_databases" || toolName === "create_database") {
-                  const output = part.output as { databases?: Array<{ id: number; name: string; type: string; status: string; location?: string }>; database?: { id: number; name: string; type: string; status: string } };
+                  const output = part.output as { databases?: Array<{ id: number; name: string; type: string; status: string; location?: string }>; database?: Record<string, unknown> };
                   const items = output.databases ?? (output.database ? [output.database] : []);
+                  const dbRaw = output.database as Record<string, unknown> | undefined;
+                  const connFields = dbRaw ? databaseConnectionFields(dbRaw) : [];
                   return (
                     <div key={index} className="my-2 flex flex-col gap-2">
                       {items.length === 0 && <p className="text-[#8e8ea0] text-sm">Баз данных не найдено</p>}
-                      {items.map((d) => (
-                        <div key={d.id} className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] px-4 py-3 flex items-center justify-between text-sm">
+                      {items.map((d, i) => (
+                        <div key={i} className="bg-[#2f2f2f] rounded-xl border border-[#3a3a3a] px-4 py-3 flex items-center justify-between text-sm">
                           <div>
-                            <span className="font-medium text-[#ececec]">{d.name}</span>
-                            <span className="ml-2 text-[#8e8ea0] text-xs">{d.type.toUpperCase()}</span>
+                            <span className="font-medium text-[#ececec]">{(d as Record<string, unknown>).name as string}</span>
+                            <span className="ml-2 text-[#8e8ea0] text-xs">{((d as Record<string, unknown>).type as string).toUpperCase()}</span>
                           </div>
-                          <span className="text-xs text-[#8e8ea0]">{d.status}</span>
+                          <span className="text-xs text-[#8e8ea0]">{(d as Record<string, unknown>).status as string}</span>
                         </div>
                       ))}
+                      {connFields.length > 0 && <ConnectionInfo fields={connFields} />}
                     </div>
                   );
                 }
@@ -831,12 +852,33 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
 
                   const output = raw as Record<string, unknown>;
 
-                  // Для операций с message — показать как уведомление
+                  // Для операций с message — показать как уведомление + данные подключения
                   if (typeof output.message === "string") {
                     const success = output.success !== false;
+                    const showConn = hasConnectionData(output);
+
+                    // Определяем тип ресурса для правильного набора полей
+                    let connFields: ConnectionField[] = [];
+                    if (showConn) {
+                      if (output.imap || output.smtp) {
+                        connFields = mailConnectionFields(output);
+                      } else if (output.s3_endpoint || output.access_key) {
+                        connFields = bucketConnectionFields(output);
+                      } else if (output.k8s_version) {
+                        connFields = k8sConnectionFields(output);
+                      } else if (output.password || output.host || output.hostname) {
+                        connFields = databaseConnectionFields(output);
+                      } else if (output.networks) {
+                        connFields = serverConnectionFields(output);
+                      }
+                    }
+
                     return (
-                      <div key={index} className={`rounded-xl p-3 border my-2 text-sm ${success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
-                        {output.message as string}
+                      <div key={index} className="flex flex-col gap-2">
+                        <div className={`rounded-xl p-3 border text-sm ${success ? "bg-[#1a2a1a] border-[#2d5a2d] text-green-300" : "bg-[#2a1a1a] border-[#5a2d2d] text-red-300"}`}>
+                          {output.message as string}
+                        </div>
+                        {connFields.length > 0 && <ConnectionInfo fields={connFields} />}
                       </div>
                     );
                   }

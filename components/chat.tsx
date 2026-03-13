@@ -16,6 +16,7 @@ import { useTimeweb } from "@/hooks/use-timeweb";
 import { Sidebar } from "./sidebar";
 import { ParticlesBg } from "./particles-bg";
 import { SuggestionChips } from "./suggestion-chips";
+import { requestNotificationPermission, notifyServerStatus } from "@/lib/notifications";
 
 interface ChatProps {
   timewebToken: string;
@@ -120,6 +121,8 @@ export function Chat({
         ...prev,
         { id: `${serverId}-${Date.now()}`, serverName, status: newStatus, statusLabel: newLabel, timestamp: Date.now() },
       ]);
+      // Браузерное push-уведомление (если вкладка в фоне)
+      notifyServerStatus(serverName, newStatus, newLabel);
     },
     []
   );
@@ -130,7 +133,7 @@ export function Chat({
 
   useServerMonitor(monitoredServers, timewebToken, handleStatusChange);
 
-  // Toast-уведомление при успешном создании сервера
+  // Toast-уведомление при успешном создании сервера + запрос разрешения на push
   const notifiedCreateRef = useRef(new Set<string>());
   useEffect(() => {
     for (const msg of messages) {
@@ -148,6 +151,8 @@ export function Chat({
           ...prev,
           { id: `create-${key}`, serverName: name, status: "installing", statusLabel, timestamp: Date.now() },
         ]);
+        // Запрашиваем разрешение на push-уведомления при создании сервера
+        requestNotificationPermission();
       }
     }
   }, [messages]);

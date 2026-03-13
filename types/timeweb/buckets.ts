@@ -7,4 +7,7 @@ export interface TimewebBucket {
   location: string;
   status: string;
   created_at: string;
+  hostname?: string;
+  access_key?: string;
+  secret_key?: string;
 }

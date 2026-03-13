@@ -81,6 +81,10 @@ export function createMailTools(token: string) {
               id: m.id,
               email: m.email,
               fqdn: m.fqdn,
+              password: input.password!,
+              imap: { host: "imap.timeweb.cloud", port: 993, ssl: true },
+              smtp: { host: "smtp.timeweb.cloud", port: 465, ssl: true },
+              webmail: "https://mail.timeweb.cloud",
               message: `Почтовый ящик "${m.email}" создан`,
             };
           }

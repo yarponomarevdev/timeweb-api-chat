@@ -8,4 +8,10 @@ export interface TimewebDatabase {
   comment: string;
   preset_id: number;
   location: string;
+  host?: string;
+  port?: number;
+  login?: string;
+  password?: string;
+  ip?: string;
+  external_hostname?: string;
 }
