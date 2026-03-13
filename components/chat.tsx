@@ -98,13 +98,18 @@ export function Chat({
       for (const part of msg.parts ?? []) {
         if (!isToolUIPart(part) || part.state !== "output-available") continue;
         const toolName = getToolName(part);
-        if (toolName !== "list_servers" && toolName !== "get_server") continue;
+        if (toolName !== "list_servers" && toolName !== "get_server" && toolName !== "create_server") continue;
         const output = (part as { output?: unknown }).output;
         if (!output || typeof output !== "object") continue;
+        // create_server может вернуть ошибку
+        if ("error" in (output as Record<string, unknown>)) continue;
         const servers = Array.isArray(output)
           ? output
-          : (output as { servers?: unknown[] }).servers ?? [(output as { server?: unknown }).server].filter(Boolean);
-        for (const s of servers) {
+          : (output as { servers?: unknown[] }).servers
+            ?? [(output as { server?: unknown }).server].filter(Boolean);
+        // Если серверы не извлечены, но output сам содержит id (create_server, get_server)
+        const candidates = servers.length > 0 ? servers : [output];
+        for (const s of candidates) {
           if (s && typeof s === "object" && "id" in s) {
             const srv = s as { id: number; name: string; status: string };
             serverMap.set(srv.id, { id: srv.id, name: srv.name, status: srv.status });

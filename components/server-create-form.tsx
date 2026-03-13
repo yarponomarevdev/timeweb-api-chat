@@ -98,7 +98,11 @@ export function ServerCreateForm({ data, onConfirm }: ServerCreateFormProps) {
   // Форма уже отправлена — показываем компактный статус вместо полной формы
   if (isDone) {
     if (!isCreating) return null; // отменено
-    return null; // результат отобразится в карточке create_server ниже
+    return (
+      <div className="text-xs text-[#8e8ea0] my-1 flex items-center gap-1.5">
+        <span className="text-[#10a37f]">✓</span> Конфигурация подтверждена, сервер создаётся…
+      </div>
+    );
   }
 
   return (

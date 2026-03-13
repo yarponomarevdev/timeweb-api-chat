@@ -15,6 +15,7 @@ export async function GET(req: Request) {
       id: server.id,
       status: server.status,
       status_label: tw.getStatusLabel(server.status),
+      networks: server.networks,
     });
   } catch (err) {
     return Response.json(

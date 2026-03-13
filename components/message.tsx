@@ -8,6 +8,7 @@ import remarkGfm from "remark-gfm";
 import { RotateCcw } from "lucide-react";
 import { ServerCard } from "./server-card";
 import { ServerCreateForm } from "./server-create-form";
+import { ServerConnectionInfo } from "./server-connection-info";
 import {
   ConnectionInfo,
   type ConnectionField,
@@ -328,11 +329,14 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
                     );
                   }
                   const success = output as CreateServerSuccess;
-                  const connFields = serverConnectionFields(success as unknown as Record<string, unknown>);
                   return (
                     <div key={index} className="flex flex-col gap-2 w-full">
                       <ServerCard server={success} onAction={onSendMessage} timewebToken={timewebToken} />
-                      <ConnectionInfo fields={connFields} />
+                      <ServerConnectionInfo
+                        initialData={success as unknown as Record<string, unknown>}
+                        serverId={success.id}
+                        timewebToken={timewebToken}
+                      />
                     </div>
                   );
                 }
