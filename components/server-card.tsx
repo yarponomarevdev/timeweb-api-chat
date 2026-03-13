@@ -110,9 +110,10 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
     return () => clearInterval(interval);
   }, [liveStatus, timewebToken, server.id]);
 
-  const mainIp = liveNetworks
-    ?.flatMap((n) => n.ips)
-    .find((ip) => ip.is_main && ip.type === "ipv4")?.ip;
+  const allIps = liveNetworks?.flatMap((n) => n.ips) ?? [];
+  const mainIp =
+    allIps.find((ip) => ip.is_main && ip.type === "ipv4")?.ip
+    ?? allIps.find((ip) => ip.type === "ipv4")?.ip;
 
   const statusBadge: Record<string, string> = {
     on: "bg-[#1a2d1a] text-green-400 border-[#1f4a1f]",
@@ -130,9 +131,12 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
     setDeleteInput("");
   };
 
+  const isWindows = server.os?.toLowerCase().includes("windows");
+  const sshCommand = mainIp && !isWindows ? `ssh root@${mainIp}` : mainIp ?? "";
+
   const handleCopyIp = () => {
-    if (!mainIp) return;
-    navigator.clipboard.writeText(mainIp);
+    if (!sshCommand) return;
+    navigator.clipboard.writeText(sshCommand);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
   };
@@ -208,13 +212,14 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
         </div>
       )}
 
-      {/* IP */}
+      {/* SSH / IP */}
       {mainIp && (
         <button
           onClick={handleCopyIp}
           className="flex items-center justify-between px-4 py-2 text-xs text-[#8e8ea0] hover:bg-[#2a2a2a] transition-colors group border-b border-[#2e2e2e]"
+          title={copied ? "Скопировано!" : `Копировать: ${sshCommand}`}
         >
-          <span className="font-mono group-hover:text-[#ececec] transition-colors">{mainIp}</span>
+          <span className="font-mono group-hover:text-[#ececec] transition-colors">{sshCommand}</span>
           {copied
             ? <Check size={12} className="text-[#10a37f]" />
             : <Copy size={12} className="opacity-0 group-hover:opacity-60 transition-opacity" />
