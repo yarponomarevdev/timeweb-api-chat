@@ -14,6 +14,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "connect-src 'self' https://api.timeweb.cloud https://api.openai.com",
               "img-src 'self' data: blob:",
+              "media-src 'self' blob:",
               "font-src 'self'",
               "frame-ancestors 'none'",
             ].join("; "),
@@ -36,7 +37,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "geolocation=(), camera=(), microphone=()",
+            value: "geolocation=(), camera=(), microphone=(self)",
           },
         ],
       },

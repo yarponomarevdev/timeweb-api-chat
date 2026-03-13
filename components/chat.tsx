@@ -17,6 +17,7 @@ import { Sidebar } from "./sidebar";
 import { ParticlesBg } from "./particles-bg";
 import { SuggestionChips } from "./suggestion-chips";
 import { requestNotificationPermission, notifyServerStatus } from "@/lib/notifications";
+import { useVoice, extractTextForTTS } from "@/hooks/use-voice";
 
 interface ChatProps {
   timewebToken: string;
@@ -90,6 +91,9 @@ export function Chat({
     fetchPresets,
     fetchBalance,
   } = useTimeweb(timewebToken);
+
+  // Голосовой ввод/вывод
+  const voice = useVoice(openaiKey);
 
   // Извлекаем серверы из результатов tool-вызовов для глобального мониторинга
   const monitoredServers = React.useMemo(() => {
@@ -172,6 +176,22 @@ export function Chat({
     return () => clearTimeout(timer);
   }, [isLoading, stop]);
 
+  // Автоозвучка: если ввод был голосовой и стриминг завершился
+  const prevStatusRef = useRef(status);
+  useEffect(() => {
+    const wasLoading = prevStatusRef.current === "streaming" || prevStatusRef.current === "submitted";
+    prevStatusRef.current = status;
+
+    if (status === "ready" && wasLoading && voice.lastInputWasVoice && messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (last.role === "assistant") {
+        const text = extractTextForTTS(last);
+        if (text) voice.speak(text);
+      }
+      voice.setLastInputWasVoice(false);
+    }
+  }, [status, messages, voice]);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const shouldFollow = useRef(true);
@@ -207,6 +227,26 @@ export function Chat({
     sendMessage({ text: input });
     setInput("");
   };
+
+  const handleVoiceStart = useCallback(async () => {
+    try {
+      await voice.startRecording();
+    } catch {
+      setErrorMsg("Разрешите доступ к микрофону в настройках браузера.");
+    }
+  }, [voice]);
+
+  const handleVoiceStop = useCallback(async () => {
+    try {
+      const text = await voice.stopRecording();
+      if (text) {
+        setInput(text);
+        voice.setLastInputWasVoice(true);
+      }
+    } catch (err) {
+      setErrorMsg(err instanceof Error ? err.message : "Ошибка распознавания речи");
+    }
+  }, [voice]);
 
   const handleQuickAction = (text: string) => {
     shouldFollow.current = true;
@@ -344,6 +384,11 @@ export function Chat({
                   onSubmit={onSubmit}
                   hasMessages={false}
                   isCentered={false}
+                  voiceState={voice.state}
+                  onStartRecording={handleVoiceStart}
+                  onStopRecording={handleVoiceStop}
+                  isVoiceSupported={voice.isSupported}
+                  recordingSeconds={voice.recordingSeconds}
                 />
               </motion.div>
 
@@ -441,6 +486,9 @@ export function Chat({
                           onSendMessage={!isLoading ? handleQuickAction : undefined}
                           timewebToken={timewebToken}
                           showSuggestions={isLastAssistantMessage}
+                          onSpeak={voice.speak}
+                          onStopSpeaking={voice.stopSpeaking}
+                          voiceState={voice.state}
                         />
                       );
                     })}
@@ -492,6 +540,11 @@ export function Chat({
                     onInputChange={handleInputChange}
                     onSubmit={onSubmit}
                     isCentered={false}
+                    voiceState={voice.state}
+                    onStartRecording={handleVoiceStart}
+                    onStopRecording={handleVoiceStop}
+                    isVoiceSupported={voice.isSupported}
+                    recordingSeconds={voice.recordingSeconds}
                   />
                 </motion.div>
                 {messages.length > 0 ? (

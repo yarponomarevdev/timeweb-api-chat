@@ -5,7 +5,9 @@ import type { UIMessage } from "ai";
 import { isTextUIPart, isToolUIPart, getToolName } from "ai";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Volume2, Square } from "lucide-react";
+import type { VoiceState } from "@/hooks/use-voice";
+import { extractTextForTTS } from "@/hooks/use-voice";
 import { ServerCard } from "./server-card";
 import { ServerCreateForm } from "./server-create-form";
 import { ServerConnectionInfo } from "./server-connection-info";
@@ -53,6 +55,9 @@ interface MessageProps {
   onSendMessage?: (text: string) => void;
   timewebToken?: string;
   showSuggestions?: boolean;
+  onSpeak?: (text: string) => Promise<void>;
+  onStopSpeaking?: () => void;
+  voiceState?: VoiceState;
 }
 
 type PresetRow = PresetSummary & { description: string };
@@ -207,7 +212,7 @@ const RICH_TOOL_OUTPUTS = new Set([
   "propose_marketplace_server",
 ]);
 
-export function Message({ message, onRetry, onSendMessage, timewebToken, showSuggestions = true }: MessageProps) {
+export function Message({ message, onRetry, onSendMessage, timewebToken, showSuggestions = true, onSpeak, onStopSpeaking, voiceState }: MessageProps) {
   const isUser = message.role === "user";
 
   if (isUser) {
@@ -944,6 +949,24 @@ export function Message({ message, onRetry, onSendMessage, timewebToken, showSug
             return null;
           })}
       </div>
+      {/* Кнопка "прослушать" для сообщений ассистента */}
+      {onSpeak && (
+        <button
+          onClick={() => {
+            if (voiceState === "speaking") {
+              onStopSpeaking?.();
+            } else {
+              const text = extractTextForTTS(message);
+              if (text) onSpeak(text);
+            }
+          }}
+          className="flex items-center gap-1.5 text-xs text-[#8e8ea0] hover:text-[#ececec] transition-colors px-2 py-1 mt-1 rounded-lg hover:bg-[#2f2f2f] w-fit"
+          aria-label={voiceState === "speaking" ? "Остановить воспроизведение" : "Прослушать сообщение"}
+        >
+          {voiceState === "speaking" ? <Square size={12} /> : <Volume2 size={12} />}
+          {voiceState === "speaking" ? "Стоп" : "Прослушать"}
+        </button>
+      )}
       {showSuggestions && suggestions && onSendMessage && (
         <SuggestedActions suggestions={suggestions} onAction={onSendMessage} />
       )}

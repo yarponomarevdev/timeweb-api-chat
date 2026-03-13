@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useRef, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Mic, Loader2 } from "lucide-react";
+import type { VoiceState } from "@/hooks/use-voice";
 
 interface ChatInputProps {
   input: string;
@@ -11,9 +12,28 @@ interface ChatInputProps {
   hasMessages?: boolean;
   onClear?: () => void;
   isCentered?: boolean;
+  // Голосовой ввод
+  voiceState?: VoiceState;
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  isVoiceSupported?: boolean;
+  recordingSeconds?: number;
 }
 
-export function ChatInput({ input, isLoading, onInputChange, onSubmit, hasMessages, onClear, isCentered }: ChatInputProps) {
+export function ChatInput({
+  input,
+  isLoading,
+  onInputChange,
+  onSubmit,
+  hasMessages,
+  onClear,
+  isCentered,
+  voiceState = "idle",
+  onStartRecording,
+  onStopRecording,
+  isVoiceSupported,
+  recordingSeconds = 0,
+}: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -36,6 +56,24 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, hasMessag
     }
   };
 
+  const isRecording = voiceState === "recording";
+  const isTranscribing = voiceState === "transcribing";
+  const showVoiceButton = isVoiceSupported && onStartRecording && onStopRecording;
+
+  const handleMicClick = () => {
+    if (isRecording) {
+      onStopRecording?.();
+    } else if (voiceState === "idle") {
+      onStartRecording?.();
+    }
+  };
+
+  const formatTime = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
   return (
     <form
       onSubmit={onSubmit}
@@ -46,20 +84,52 @@ export function ChatInput({ input, isLoading, onInputChange, onSubmit, hasMessag
         value={input}
         onChange={onInputChange}
         onKeyDown={handleKeyDown}
-        placeholder="Напишите запрос..."
+        placeholder={isRecording ? "Говорите..." : isTranscribing ? "Распознавание..." : "Напишите запрос..."}
         className="w-full bg-transparent text-[#ececec] placeholder-[#8e8ea0] resize-none focus:outline-none p-2 no-scrollbar"
         style={{ minHeight: isCentered ? "80px" : undefined, maxHeight: isCentered ? "300px" : "200px" }}
         rows={1}
-        disabled={isLoading}
+        disabled={isLoading || isRecording || isTranscribing}
       />
-      <button
-        type="submit"
-        disabled={isLoading || !input.trim()}
-        aria-label="Отправить сообщение"
-        className="ml-2 mb-1 p-2 rounded-xl bg-[#10a37f] text-white disabled:bg-[#3a3a3a] disabled:text-[#555] hover:bg-[#0e9572] transition-colors flex-shrink-0"
-      >
-        <ArrowUp size={20} />
-      </button>
+      <div className="flex items-end gap-1 flex-shrink-0">
+        {/* Таймер записи */}
+        {isRecording && recordingSeconds > 0 && (
+          <span className="text-xs text-red-400 mb-2.5 mr-1 tabular-nums">
+            {formatTime(recordingSeconds)}
+          </span>
+        )}
+        {/* Кнопка микрофона */}
+        {showVoiceButton && (
+          <button
+            type="button"
+            onClick={handleMicClick}
+            disabled={isTranscribing || isLoading}
+            aria-label={isRecording ? "Остановить запись" : "Записать голосовое сообщение"}
+            aria-pressed={isRecording}
+            className={`mb-1 p-2 rounded-xl transition-colors flex-shrink-0 ${
+              isRecording
+                ? "bg-red-500 text-white animate-pulse"
+                : isTranscribing
+                  ? "bg-[#3a3a3a] text-[#555]"
+                  : "bg-[#3a3a3a] text-[#8e8ea0] hover:bg-[#10a37f] hover:text-white"
+            }`}
+          >
+            {isTranscribing ? (
+              <Loader2 size={20} className="animate-spin" />
+            ) : (
+              <Mic size={20} />
+            )}
+          </button>
+        )}
+        {/* Кнопка отправки */}
+        <button
+          type="submit"
+          disabled={isLoading || !input.trim() || isRecording || isTranscribing}
+          aria-label="Отправить сообщение"
+          className="mb-1 p-2 rounded-xl bg-[#10a37f] text-white disabled:bg-[#3a3a3a] disabled:text-[#555] hover:bg-[#0e9572] transition-colors flex-shrink-0"
+        >
+          <ArrowUp size={20} />
+        </button>
+      </div>
     </form>
   );
 }
