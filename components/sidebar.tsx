@@ -217,7 +217,7 @@ interface SidebarProps {
   onAction: (text: string) => void;
   onChangeToken: () => void;
   onClose?: () => void;
-onOpenServers?: () => void;
+  onOpenServers?: () => void;
   onOpenBalance?: () => void;
   onOpenPresets?: () => void;
   onOpenToolLog?: () => void;

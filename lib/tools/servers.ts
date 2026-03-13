@@ -100,6 +100,7 @@ export function createServerTools(token: string) {
           comment: s.comment,
           created_at: s.created_at,
           location: s.location,
+          networks: s.networks,
         }));
       },
     }),
@@ -163,9 +164,18 @@ export function createServerTools(token: string) {
         const bandwidth = finalPreset?.bandwidth ?? 1000;
         const finalPresetId = finalPreset?.id ?? preset_id;
 
+        // Если указан software_id без os_id, получаем os_id из метаданных ПО
+        let resolvedOsId = os_id;
+        if (software_id && !os_id) {
+          try {
+            const sw = await tw.getSoftware(token, software_id);
+            if (sw.os?.id) resolvedOsId = sw.os.id;
+          } catch { /* продолжаем без os_id */ }
+        }
+
         let server = await tw.createServer(token, {
           name,
-          ...(os_id ? { os_id } : {}),
+          ...(resolvedOsId ? { os_id: resolvedOsId } : {}),
           ...(software_id ? { software_id } : {}),
           preset_id: finalPresetId,
           bandwidth,

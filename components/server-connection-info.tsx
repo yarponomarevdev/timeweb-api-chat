@@ -1,33 +1,31 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { ConnectionInfo, serverConnectionFields, type ConnectionField } from "./connection-info";
+import { Copy, Check, Terminal } from "lucide-react";
 
 interface ServerConnectionInfoProps {
-  /** Начальный output из create_server / get_server */
   initialData: Record<string, unknown>;
-  /** ID сервера для polling */
   serverId: number;
-  /** Токен для запросов */
   timewebToken?: string;
 }
 
-/**
- * Обёртка над ConnectionInfo, которая подгружает IP-адрес,
- * если он не был доступен в начальных данных.
- */
+type NetworkIp = { ip: string; is_main: boolean; type: string };
+type Network = { type: string; ips: NetworkIp[] };
+
+function extractMainIp(networks?: Network[]): string | undefined {
+  return networks?.flatMap((n) => n.ips).find((ip) => ip.is_main && ip.type === "ipv4")?.ip;
+}
+
 export function ServerConnectionInfo({ initialData, serverId, timewebToken }: ServerConnectionInfoProps) {
-  const [data, setData] = useState(initialData);
+  const [networks, setNetworks] = useState(initialData.networks as Network[] | undefined);
   const pollingRef = useRef<ReturnType<typeof setInterval>>(undefined);
   const attemptRef = useRef(0);
+  const [copied, setCopied] = useState(false);
 
-  const hasIp = (() => {
-    const networks = data.networks as Array<{ ips?: Array<{ ip: string }> }> | undefined;
-    return networks?.some((n) => n.ips?.some((ip) => ip.ip)) ?? false;
-  })();
+  const mainIp = extractMainIp(networks);
 
   useEffect(() => {
-    if (hasIp || !timewebToken || !serverId) return;
+    if (mainIp || !timewebToken || !serverId) return;
 
     const poll = async () => {
       attemptRef.current++;
@@ -37,28 +35,53 @@ export function ServerConnectionInfo({ initialData, serverId, timewebToken }: Se
         });
         if (!res.ok) return;
         const fresh = await res.json();
-        // API /server-status возвращает { status, status_label, networks? }
-        if (fresh.networks?.some((n: { ips?: Array<{ ip: string }> }) => n.ips?.some((ip: { ip: string }) => ip.ip))) {
-          setData((prev) => ({ ...prev, networks: fresh.networks }));
-        }
+        if (fresh.networks) setNetworks(fresh.networks);
       } catch { /* игнорируем */ }
 
-      // Останавливаем после 15 попыток (~2 мин)
       if (attemptRef.current >= 15 && pollingRef.current) {
         clearInterval(pollingRef.current);
       }
     };
 
     pollingRef.current = setInterval(poll, 8000);
-    // Первый запрос сразу через 3 сек
     const timeout = setTimeout(poll, 3000);
 
     return () => {
       clearInterval(pollingRef.current);
       clearTimeout(timeout);
     };
-  }, [hasIp, serverId, timewebToken]);
+  }, [mainIp, serverId, timewebToken]);
 
-  const fields: ConnectionField[] = serverConnectionFields(data);
-  return <ConnectionInfo fields={fields} />;
+  const sshCommand = mainIp ? `ssh root@${mainIp}` : null;
+
+  const handleCopy = () => {
+    if (!sshCommand) return;
+    navigator.clipboard.writeText(sshCommand);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
+  if (!mainIp) {
+    return (
+      <div className="flex items-center gap-2 text-xs text-[#8e8ea0] my-1 px-1">
+        <div className="w-3 h-3 rounded-full border-2 border-t-[#10a37f] border-[#3a3a3a] animate-spin" />
+        IP-адрес назначается...
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-2 bg-[#1e2a24] hover:bg-[#243028] border border-[#2d5a3d] rounded-lg px-3 py-2 my-1 transition-colors group max-w-sm w-full"
+    >
+      <Terminal size={14} className="text-[#10a37f] flex-shrink-0" />
+      <span className="font-mono text-sm text-[#ececec] truncate flex-1 text-left">{sshCommand}</span>
+      {copied ? (
+        <Check size={14} className="text-[#10a37f] flex-shrink-0" />
+      ) : (
+        <Copy size={14} className="text-[#8e8ea0] group-hover:text-[#ececec] transition-colors flex-shrink-0" />
+      )}
+    </button>
+  );
 }

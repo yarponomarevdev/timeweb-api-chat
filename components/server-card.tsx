@@ -76,12 +76,15 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
   const [deleteInput, setDeleteInput] = useState("");
   const [liveStatus, setLiveStatus] = useState(server.status);
   const [liveStatusLabel, setLiveStatusLabel] = useState(server.status_label);
+  const [liveNetworks, setLiveNetworks] = useState(server.networks);
   const [autoRefreshing, setAutoRefreshing] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setLiveStatus(server.status);
     setLiveStatusLabel(server.status_label);
+    setLiveNetworks(server.networks);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- networks сравнивается по ссылке, синхронизируем только при смене сервера/статуса
   }, [server.id, server.status, server.status_label]);
 
   useEffect(() => {
@@ -96,6 +99,7 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
           const data = await res.json();
           setLiveStatus(data.status);
           setLiveStatusLabel(data.status_label);
+          if (data.networks) setLiveNetworks(data.networks);
         }
       } catch {
         // не прерываем при ошибке
@@ -106,7 +110,7 @@ export function ServerCard({ server, onAction, timewebToken }: ServerCardProps) 
     return () => clearInterval(interval);
   }, [liveStatus, timewebToken, server.id]);
 
-  const mainIp = server.networks
+  const mainIp = liveNetworks
     ?.flatMap((n) => n.ips)
     .find((ip) => ip.is_main && ip.type === "ipv4")?.ip;
 

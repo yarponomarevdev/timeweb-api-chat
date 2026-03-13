@@ -37,7 +37,6 @@ export function notifyServerStatus(
   statusLabel: string
 ) {
   if (!isNotificationGranted()) return;
-  if (!document.hidden) return; // уведомляем только если вкладка в фоне
 
   // Уведомляем только о финальных статусах (сервер готов / выключен)
   if (!FINAL_STATUSES.has(newStatus)) return;

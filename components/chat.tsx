@@ -3,7 +3,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, isTextUIPart, isToolUIPart, getToolName } from "ai";
-import { Server, Menu, LayoutGrid, CreditCard } from "lucide-react";
+import { Server, Menu, LayoutGrid, CreditCard, Mic } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChatInput } from "./chat-input";
 import { Message } from "./message";
@@ -16,8 +16,8 @@ import { useTimeweb } from "@/hooks/use-timeweb";
 import { Sidebar } from "./sidebar";
 import { ParticlesBg } from "./particles-bg";
 import { SuggestionChips } from "./suggestion-chips";
+import { VoiceMode } from "./voice-mode";
 import { requestNotificationPermission, notifyServerStatus } from "@/lib/notifications";
-import { useVoice, extractTextForTTS } from "@/hooks/use-voice";
 
 interface ChatProps {
   timewebToken: string;
@@ -76,6 +76,8 @@ export function Chat({
   const [showPresetsPanel, setShowPresetsPanel] = useState(false);
   const [showBalancePanel, setShowBalancePanel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [voiceActive, setVoiceActive] = useState(false);
+  const [modeTransition, setModeTransition] = useState(false);
 
   const {
     servers: cachedServers,
@@ -91,9 +93,6 @@ export function Chat({
     fetchPresets,
     fetchBalance,
   } = useTimeweb(timewebToken);
-
-  // Голосовой ввод/вывод
-  const voice = useVoice(openaiKey);
 
   // Извлекаем серверы из результатов tool-вызовов для глобального мониторинга
   const monitoredServers = React.useMemo(() => {
@@ -176,22 +175,6 @@ export function Chat({
     return () => clearTimeout(timer);
   }, [isLoading, stop]);
 
-  // Автоозвучка: если ввод был голосовой и стриминг завершился
-  const prevStatusRef = useRef(status);
-  useEffect(() => {
-    const wasLoading = prevStatusRef.current === "streaming" || prevStatusRef.current === "submitted";
-    prevStatusRef.current = status;
-
-    if (status === "ready" && wasLoading && voice.lastInputWasVoice && messages.length > 0) {
-      const last = messages[messages.length - 1];
-      if (last.role === "assistant") {
-        const text = extractTextForTTS(last);
-        if (text) voice.speak(text);
-      }
-      voice.setLastInputWasVoice(false);
-    }
-  }, [status, messages, voice]);
-
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const shouldFollow = useRef(true);
@@ -227,26 +210,6 @@ export function Chat({
     sendMessage({ text: input });
     setInput("");
   };
-
-  const handleVoiceStart = useCallback(async () => {
-    try {
-      await voice.startRecording();
-    } catch {
-      setErrorMsg("Разрешите доступ к микрофону в настройках браузера.");
-    }
-  }, [voice]);
-
-  const handleVoiceStop = useCallback(async () => {
-    try {
-      const text = await voice.stopRecording();
-      if (text) {
-        setInput(text);
-        voice.setLastInputWasVoice(true);
-      }
-    } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : "Ошибка распознавания речи");
-    }
-  }, [voice]);
 
   const handleQuickAction = (text: string) => {
     shouldFollow.current = true;
@@ -364,13 +327,36 @@ export function Chat({
                 <span className="text-[#ececec]">.cloud</span>
               </motion.h1>
               <motion.p
-                className="text-[#8e8ea0] text-sm mb-8 text-center"
+                className="text-[#8e8ea0] text-sm mb-6 text-center"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.3, delay: 0.12 }}
               >
                 Управляй своими серверами на Timeweb естественным языком
               </motion.p>
+
+              {/* Tab-переключатель: Чат / Голос */}
+              <motion.div
+                className="flex items-center bg-[#2a2a2a] rounded-xl p-1 mb-6"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.14 }}
+              >
+                <button className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium bg-[#3a3a3a] text-[#ececec]">
+                  <LayoutGrid size={15} />
+                  Чат
+                </button>
+                <button
+                  onClick={() => {
+                    setModeTransition(true);
+                    setTimeout(() => { setVoiceActive(true); setModeTransition(false); }, 400);
+                  }}
+                  className="flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-medium text-[#8e8ea0] hover:text-[#ececec] transition-colors"
+                >
+                  <Mic size={15} />
+                  Голос
+                </button>
+              </motion.div>
 
               <motion.div
                 layoutId="chat-input-area"
@@ -384,11 +370,6 @@ export function Chat({
                   onSubmit={onSubmit}
                   hasMessages={false}
                   isCentered={false}
-                  voiceState={voice.state}
-                  onStartRecording={handleVoiceStart}
-                  onStopRecording={handleVoiceStop}
-                  isVoiceSupported={voice.isSupported}
-                  recordingSeconds={voice.recordingSeconds}
                 />
               </motion.div>
 
@@ -420,46 +401,63 @@ export function Chat({
               exit={{ opacity: 0 }}
               transition={{ duration: 0.22, ease: [0.4, 0, 0.2, 1] }}
             >
-              {/* Header мобильный */}
-              <motion.header
-                className="flex items-center justify-between px-4 h-12 border-b border-[#2a2a2a] flex-shrink-0 lg:hidden bg-[#212121]"
+              {/* Кнопка меню — мобильная */}
+              <div className="absolute top-3 left-3 z-20 lg:hidden">
+                <button
+                  onClick={() => setSidebarOpen(true)}
+                  className="p-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
+                  title="Меню"
+                >
+                  <Menu size={18} />
+                </button>
+              </div>
+
+              {/* Быстрые кнопки — мобильные */}
+              <div className="absolute top-3 right-3 z-20 flex items-center gap-1 lg:hidden">
+                <button
+                  onClick={() => { fetchServers(); setShowServersPanel(true); }}
+                  className="p-2 text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] rounded-lg transition-colors"
+                >
+                  <Server size={14} />
+                </button>
+                <button
+                  onClick={() => { fetchBalance(); setShowBalancePanel(true); }}
+                  className="p-2 text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] rounded-lg transition-colors"
+                >
+                  <CreditCard size={14} />
+                </button>
+                <button
+                  onClick={() => { fetchPresets(); setShowPresetsPanel(true); }}
+                  className="p-2 text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] rounded-lg transition-colors"
+                >
+                  <LayoutGrid size={14} />
+                </button>
+              </div>
+
+              {/* Переключатель Чат / Голос — поверх чата */}
+              <motion.div
+                className="absolute top-3 left-0 right-0 flex items-center justify-center z-10 pointer-events-none"
                 initial={{ opacity: 0, y: -12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, delay: 0.1 }}
               >
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSidebarOpen(true)}
-                    className="p-2 -ml-2 rounded-lg text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] transition-colors"
-                    title="Меню"
-                  >
-                    <Menu size={18} />
-                  </button>
-                </div>
-                <div className="flex items-center gap-1">
-                  <button
-                    onClick={() => { fetchServers(); setShowServersPanel(true); }}
-                    className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
-                  >
-                    <Server size={14} />
-                    <span className="hidden sm:inline">Серверы</span>
-                  </button>
-                  <button
-                    onClick={() => { fetchBalance(); setShowBalancePanel(true); }}
-                    className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
-                  >
-                    <CreditCard size={14} />
-                    <span className="hidden sm:inline">Баланс</span>
-                  </button>
-                  <button
-                    onClick={() => { fetchPresets(); setShowPresetsPanel(true); }}
-                    className="flex items-center gap-1.5 text-sm text-[#8e8ea0] hover:text-[#ececec] hover:bg-[#2f2f2f] px-2.5 py-1.5 rounded-lg transition-colors"
-                  >
+                <div className="flex items-center bg-[#2a2a2a]/80 backdrop-blur-md rounded-xl p-1 pointer-events-auto shadow-lg shadow-black/20">
+                  <button className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium bg-[#3a3a3a] text-[#ececec]">
                     <LayoutGrid size={14} />
-                    <span className="hidden sm:inline">Тарифы</span>
+                    Чат
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModeTransition(true);
+                      setTimeout(() => { setVoiceActive(true); setModeTransition(false); }, 400);
+                    }}
+                    className="flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm font-medium text-[#8e8ea0] hover:text-[#ececec] transition-colors"
+                  >
+                    <Mic size={14} />
+                    Голос
                   </button>
                 </div>
-              </motion.header>
+              </motion.div>
 
               {/* Область сообщений — видна только при наличии сообщений */}
               {messages.length > 0 && (
@@ -470,7 +468,7 @@ export function Chat({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3, delay: 0.08 }}
                 >
-                  <div className="max-w-2xl mx-auto px-4 py-6">
+                  <div className="max-w-2xl mx-auto px-4 pt-14 pb-6">
                     {messages.map((m, i) => {
                       const userText = m.parts?.find((p) => isTextUIPart(p))?.text ?? "";
                       const isLastAssistantMessage = m.role === "assistant" && i === lastAssistantIndex;
@@ -486,9 +484,6 @@ export function Chat({
                           onSendMessage={!isLoading ? handleQuickAction : undefined}
                           timewebToken={timewebToken}
                           showSuggestions={isLastAssistantMessage}
-                          onSpeak={voice.speak}
-                          onStopSpeaking={voice.stopSpeaking}
-                          voiceState={voice.state}
                         />
                       );
                     })}
@@ -540,11 +535,6 @@ export function Chat({
                     onInputChange={handleInputChange}
                     onSubmit={onSubmit}
                     isCentered={false}
-                    voiceState={voice.state}
-                    onStartRecording={handleVoiceStart}
-                    onStopRecording={handleVoiceStop}
-                    isVoiceSupported={voice.isSupported}
-                    recordingSeconds={voice.recordingSeconds}
                   />
                 </motion.div>
                 {messages.length > 0 ? (
@@ -705,7 +695,61 @@ export function Chat({
           )}
         </QuickViewPanel>
 
+        {/* Анимация перехода в голосовой режим */}
+        <AnimatePresence>
+          {modeTransition && (
+            <motion.div
+              className="fixed inset-0 z-[100] pointer-events-none"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+            >
+              {/* Размытие фона */}
+              <motion.div
+                className="absolute inset-0 bg-[#212121]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.35 }}
+              />
+              {/* Пульсирующее кольцо */}
+              <motion.div
+                className="absolute top-1/2 left-1/2 rounded-full border-2 border-[#10a37f]"
+                initial={{ width: 0, height: 0, x: "-50%", y: "-50%", opacity: 0.8 }}
+                animate={{ width: 600, height: 600, x: "-50%", y: "-50%", opacity: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+              <motion.div
+                className="absolute top-1/2 left-1/2 rounded-full border border-[#10a37f]"
+                initial={{ width: 0, height: 0, x: "-50%", y: "-50%", opacity: 0.5 }}
+                animate={{ width: 400, height: 400, x: "-50%", y: "-50%", opacity: 0 }}
+                transition={{ duration: 0.5, ease: "easeOut", delay: 0.1 }}
+              />
+              {/* Иконка микрофона в центре */}
+              <motion.div
+                className="absolute top-1/2 left-1/2 flex items-center justify-center"
+                initial={{ scale: 0, x: "-50%", y: "-50%", opacity: 0 }}
+                animate={{ scale: 1, x: "-50%", y: "-50%", opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.05, type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="w-16 h-16 rounded-full bg-[#10a37f] flex items-center justify-center shadow-[0_0_40px_rgba(16,163,127,0.5)]">
+                  <Mic size={28} className="text-white" />
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      {/* Голосовой режим — полноэкранный оверлей с общим состоянием чата */}
+      {voiceActive && (
+        <VoiceMode
+          openaiKey={openaiKey}
+          messages={messages}
+          sendMessage={sendMessage}
+          status={status}
+          onClose={() => setVoiceActive(false)}
+        />
+      )}
     </div>
   );
 }
