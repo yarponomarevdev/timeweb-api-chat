@@ -33,6 +33,7 @@ export function Chat({
 }: ChatProps) {
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null);
   const [retryAfter, setRetryAfter] = React.useState<number>(0);
+  const [voiceActive, setVoiceActive] = useState(false);
 
   // Обратный отсчёт rate-limit
   React.useEffect(() => {
@@ -44,7 +45,7 @@ export function Chat({
   const { messages, sendMessage, status, setMessages, stop } = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: { timewebToken, openaiKey },
+      body: { timewebToken, openaiKey, voiceMode: voiceActive },
     }),
     onError: (err) => {
       const msg = err instanceof Error ? err.message : String(err);
@@ -76,8 +77,9 @@ export function Chat({
   const [showPresetsPanel, setShowPresetsPanel] = useState(false);
   const [showBalancePanel, setShowBalancePanel] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [voiceActive, setVoiceActive] = useState(false);
   const [modeTransition, setModeTransition] = useState(false);
+  const [vadEnabled, setVadEnabled] = useState(true);
+  const voiceSpeakRef = useRef<((text: string) => void) | null>(null);
 
   const {
     servers: cachedServers,
@@ -131,6 +133,15 @@ export function Chat({
       ]);
       // Браузерное push-уведомление (если вкладка в фоне)
       notifyServerStatus(serverName, newStatus, newLabel);
+      // Голосовое уведомление (если голосовой режим активен)
+      if (voiceSpeakRef.current) {
+        const text = newStatus === "on"
+          ? `Сервер ${serverName} готов и работает.`
+          : newStatus === "off"
+            ? `Сервер ${serverName} выключен.`
+            : `Сервер ${serverName}: ${newLabel}.`;
+        voiceSpeakRef.current(text);
+      }
     },
     []
   );
@@ -748,6 +759,9 @@ export function Chat({
           sendMessage={sendMessage}
           status={status}
           onClose={() => setVoiceActive(false)}
+          speakRef={voiceSpeakRef}
+          vadEnabled={vadEnabled}
+          onVadToggle={() => setVadEnabled(v => !v)}
         />
       )}
     </div>

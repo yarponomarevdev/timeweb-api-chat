@@ -14,6 +14,9 @@ interface VoiceModeProps {
   sendMessage: (opts: { text: string }) => void;
   status: string;
   onClose: () => void;
+  speakRef?: React.MutableRefObject<((text: string) => void) | null>;
+  vadEnabled: boolean;
+  onVadToggle: () => void;
 }
 
 const STATE_LABELS: Record<string, string> = {
@@ -23,11 +26,10 @@ const STATE_LABELS: Record<string, string> = {
   speaking: "Отвечаю...",
 };
 
-export function VoiceMode({ openaiKey, messages, sendMessage, status, onClose }: VoiceModeProps) {
+export function VoiceMode({ openaiKey, messages, sendMessage, status, onClose, speakRef, vadEnabled, onVadToggle }: VoiceModeProps) {
   const [initialized, setInitialized] = useState(false);
   const [modeTransition, setModeTransition] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [vadEnabled, setVadEnabled] = useState(true);
   const [lastTranscription, setLastTranscription] = useState<string | null>(null);
 
   const isLoading = status === "streaming" || status === "submitted";
@@ -42,6 +44,12 @@ export function VoiceMode({ openaiKey, messages, sendMessage, status, onClose }:
     onTranscription: handleTranscription,
     enabled: vadEnabled && !isLoading,
   });
+
+  // Экспорт speak для внешних вызовов (уведомления о статусе)
+  useEffect(() => {
+    if (speakRef) speakRef.current = voice.speak;
+    return () => { if (speakRef) speakRef.current = null; };
+  }, [speakRef, voice.speak]);
 
   // Инициализация микрофона при монтировании
   useEffect(() => {
@@ -178,7 +186,7 @@ export function VoiceMode({ openaiKey, messages, sendMessage, status, onClose }:
           transition={{ duration: 0.4, delay: 0.4, type: "spring", stiffness: 200, damping: 15 }}
         >
           <button
-            onClick={() => setVadEnabled((v) => !v)}
+            onClick={onVadToggle}
             className={`p-5 rounded-full transition-all duration-300 ${
               vadEnabled
                 ? "bg-[#10a37f] text-white shadow-[0_0_30px_rgba(16,163,127,0.4)]"
